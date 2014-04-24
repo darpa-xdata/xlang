@@ -12,7 +12,7 @@ Clone this repo<br>
 Go to the repo directory and start the environment<br>
 <code>vagrant up</code><br>
 
-After it boots, log in to the VM and switch to the hdfs user<br>
+After it boots, log in to the VM<br>
 <code>vagrant ssh</code><br>
 
 
