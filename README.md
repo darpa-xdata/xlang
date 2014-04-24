@@ -8,8 +8,9 @@ Install and configure Vagrant<br>
 <code>vagrant plugin install vagrant-vbguest</code>
 
 Clone this repo<br>
+<code>git clone https://github.com/darpa-xdata/xlang-vm.git</code>
 
-Go to the repo directory and start the environment<br>
+Go to the repo directory and start the environment (vagrant commands must be typed in the repo root dir where the Vagrant file resides)<br>
 <code>vagrant up</code><br>
 
 After it boots, log in to the VM<br>
