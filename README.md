@@ -16,10 +16,10 @@ After it boots, log in to the VM and switch to the hdfs user<br>
 <code>vagrant ssh</code><br>
 
 
-To add your software to the VM:
-1. Create a sensibly named deployment script in the /scripts directory. This script should download, intall, and configure all of your software from a bare operating system. This is where the majority of your development will be.
-2. Store any custom files or code in the files directory or call them from their source location with wget. Examples are in the examples.sh.
-3. Add a line to deploy.sh that calls your deployment script. # be sure to comment what it does here.
+To add your software to the VM:<br>
+1. Create a sensibly named deployment script in the /scripts directory. This script should download, intall, and configure all of your software from a bare operating system. This is where the majority of your development will be.<br>
+2. Store any custom files or code in the files directory or call them from their source location with wget. Examples are in the examples.sh.<br>
+3. Add a line to deploy.sh that calls your deployment script. # be sure to comment what it does here.<br>
 
 Other useful vagrant commands:
 vagrant suspend
