@@ -1,0 +1,7 @@
+#!/bin/bash
+HADOOP_CONFIG=/home/hdfs/hadoop_configs/xdata-compute-config/
+$HADOOP_HOME/bin/hadoop --config $HADOOP_CONFIG jar $HADOOP_HOME/share/hadoop/mapreduce1/contrib/streaming/hadoop-streaming-2.0.0-mr1-cdh4.4.0.jar \
+-input /temp/akamai_raw/ \
+-output /temp/akwc/ \
+-mapper /bin/cat \
+-reducer /bin/wc
