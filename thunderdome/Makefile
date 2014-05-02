@@ -24,7 +24,7 @@ default: all
 
 all: example_client
 
-libtd.so: td.h td.c
+libtd.so: td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -fPIC -c td.c -o td.o
 	$(CC) $(DEBUG) -shared -fPIC td.o -o $@ -ldl
 
