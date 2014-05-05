@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 scriptdir=/vagrant/scripts
 
-echo "test for" > /echo.txt
+echo "test for" > /echo.txt # 2112 test, if this file exists on the VM then this script ran
+
+# this only needs to be done once
 sudo apt-get update
 
 # Install a Java runtime enviornment
