@@ -8,7 +8,7 @@ sudo apt-get -y install  openjdk-6-jdk
 sudo apt-get -y install makepasswd
 
 # Create the hdfs user
-PASSWORD=xdata
+PASSWORD=anexamplepasswordidontmindbeingongithub
 export SHELL=/bin/bash
 echo $PASSWORD | sudo tee -a /tmp/password.txt
 passhash=$(makepasswd --clearfrom=/tmp/password.txt --crypt-md5 |awk '{print $2}')
