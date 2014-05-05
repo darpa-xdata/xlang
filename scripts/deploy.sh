@@ -14,3 +14,4 @@ echo JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64 | sudo tee -a /etc/environment
 
 # Add your deployment scripts here:
 sudo $scriptdir/helloworld.sh
+sudo $scriptdir/R.sh
