@@ -1,183 +1,189 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <set>
+
+#include <RInside.h>
 
 #include "td.h"
 
-#include <R.h>
-#include <Rdefines.h>
+using namespace Rcpp;
+using namespace std;
 
-#include <RInside.h>
+
+static RInside r_env(0, NULL);
+static set<SEXP> r_obj_set;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-static td_tag_t r_type_to_td(SEXP t)
+static td_tag_t r_type_to_td(SEXPTYPE t)
 {
-    if (LENGTH(t) == 1)
-    { 
-      if (isInteger(t)) return TD_INT32;
-      if (isReal(t)) return TD_DOUBLE;
-      if (isString(t)) return TD_UTF8;
-    }
-    
-    if (LENGTH(t) > 1) return TD_ARRAY;
-
-    return TD_OBJECT;
+  if (t == INTSXP) return TD_INT32;
+  if (t == REALSXP) return TD_DOUBLE;
+  if (t == CHARSXP) return TD_UTF8;
+  return TD_UNKNOWN;
 } 
-static SEXP td_type_to_r(td_tag_t tag)
+
+static SEXPTYPE td_type_to_r(td_tag_t tag)
 {
-    switch (tag) {
-    case TD_INT8: return NEW_INTEGER(1);
-    case TD_UINT8: return NEW_INTEGER(1);
-    case TD_INT16: return NEW_INTEGER(1);
-    case TD_UINT16: return NEW_INTEGER(1);
-    case TD_INT32: return NEW_INTEGER(1);
-    case TD_UINT32: return NEW_INTEGER(1);
-    case TD_INT64: return NEW_NUMERIC(1);
-    case TD_UINT64: return NEW_NUMERIC(1);
-    case TD_FLOAT: return NEW_NUMERIC(1);
-    case TD_DOUBLE: return NEW_NUMERIC(1);
-    case TD_UTF8: return NEW_STRING(1);
+  switch (tag) {
+    case TD_INT8: return INTSXP;
+    case TD_UINT8: return INTSXP;
+    case TD_INT16: return INTSXP;
+    case TD_UINT16: return INTSXP;
+    case TD_INT32: return INTSXP;
+    case TD_UINT32: return INTSXP;
+    case TD_INT64: return REALSXP;
+    case TD_UINT64: return REALSXP;
+    case TD_FLOAT: return REALSXP;
+    case TD_DOUBLE: return REALSXP;
+    case TD_UTF8: return STRSXP;
     default:
-        return NEW_INTEGER(0);
+      return NILSXP;
     }
 }
 
 // value mapping
-/*
-static void to_td_val(td_val_t *out, jl_value_t *v)
+static void to_td_val(td_val_t *out, SEXP v)
 {
-    td_tag_t tag = jl_type_to_td(jl_typeof(v));
-    if (tag < TD_UTF8) {
-        out->tag = tag;
-        memcpy(&out->object, jl_data_ptr(v), td_type_size(tag));
-    }
-    else {
-        out->owner = td_env_julia(NULL, NULL);
-        out->object = v;
-    }
+  td_tag_t tag = r_type_to_td(TYPEOF(v));
+  out->tag = tag;
+  if (tag < TD_UTF8)
+  {
+    memcpy(&out->object, INTEGER(v), td_type_size(tag));
+  }
+  else 
+  {
+    throw("td_val_t not supported for specified types");
+  }
 }
 
-static jl_value_t *from_td_val(td_val_t *v)
+static SEXP from_td_val(td_val_t *v)
 {
-    td_tag_t tag = td_typeof(v);
-    switch (tag) {
-    case TD_INT8: return jl_box_int8(td_int8(v));
-    case TD_UINT8: return jl_box_uint8(td_uint8(v));
-    case TD_INT16: return jl_box_int16(td_int16(v));
-    case TD_UINT16: return jl_box_uint16(td_uint16(v));
-    case TD_INT32: return jl_box_int32(td_int32(v));
-    case TD_UINT32: return jl_box_uint32(td_uint32(v));
-    case TD_INT64: return jl_box_int64(td_int64(v));
-    case TD_UINT64: return jl_box_uint64(td_uint64(v));
-    case TD_FLOAT: return jl_box_float32(td_float(v));
-    case TD_DOUBLE: return jl_box_float64(td_double(v));
-    case TD_UTF8:
-        return jl_pchar_to_string(td_dataptr(v), td_length(v));
-    case TD_ARRAY:
-        return (jl_value_t*)
-            jl_ptr_to_array_1d((jl_value_t*)jl_apply_array_type((jl_datatype_t*)td_type_to_jl(td_eltype(v)), 1),
-                               td_dataptr(v), td_length(v), 0);
-    default:
-        return jl_nothing;
+  td_tag_t tag = td_typeof(v);
+  SEXP pv;
+  if (tag < TD_INT64) 
+  {
+    pv = Rf_allocVector(INTSXP, 1);
+  }
+  else if (tag >= TD_INT64 && tag < TD_DOUBLE)
+  {
+    pv = Rf_allocVector(REALSXP, 1);
+  }
+  else if ( tag == TD_UTF8 )
+  {
+    pv = Rf_allocVector(STRSXP, 1);
+  }
+  else if ( tag == TD_ARRAY) 
+  {
+    if (td_eltype(v) <= TD_UINT32) 
+    {
+      pv = Rf_allocVector(INTSXP, td_length(v));
     }
+    else if (td_eltype(v) > TD_UINT32 && td_eltype(v) <= TD_DOUBLE) 
+    {
+      pv = Rf_allocVector(REALSXP, td_length(v));
+    }
+    else if (td_eltype(v) == TD_UTF8)
+    {
+      throw("Arrays of strings are not yet supported.");
+    }
+  }
+  else 
+  {
+    pv = Rf_allocVector(REALSXP, 0);
+  }
+  R_PreserveObject(pv);
+  return pv;
 }
 
 // entry points
 
-void td_jl_invoke0(td_val_t *out, char *fname)
+void td_r_eval(td_val_t *out, char *str)
 {
-    jl_function_t *f = jl_get_function(jl_base_module, fname);
-    jl_value_t *v = jl_call0(f);
-    to_td_val(out, v);
+  SEXP ans;
+  r_env.parseEval(str, ans);
+  to_td_val(out, ans);
 }
 
-void td_jl_invoke1(td_val_t *out, char *fname, td_val_t *arg)
+void td_r_invoke0(td_val_t *out, char *fname)
 {
-    jl_function_t *f = jl_get_function(jl_base_module, fname);
-    jl_value_t *v = jl_call1(f, from_td_val(arg));
-    to_td_val(out, v);
+  SEXP ans;
+  r_env.parseEval((string(fname) + "()").c_str(), ans);
+  to_td_val(out, ans);
 }
 
-void td_jl_eval(td_val_t *out, char *str)
+void td_r_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-    jl_value_t *v = jl_eval_string(str);
-    to_td_val(out, v);
+  SEXP ans;
+  string arg_name = 
+    r_env.parseEval("paste(sample(letters, 10, replace=TRUE), collapse='')");
+  r_env[arg_name] = from_td_val(arg);
+  r_env.parseEval( (string(fname) + "(" + arg_name + ")").c_str(), ans);
+  r_env.parseEvalQ(string("rm(") + arg_name + ")");
+  R_PreserveObject(ans);
+  to_td_val(out, ans);
 }
 
-td_tag_t td_jl_get_type(void *v)
+td_tag_t td_r_get_type(void *v)
 {
-    return jl_type_to_td(jl_typeof((jl_value_t*)v));
+  return r_type_to_td(TYPEOF((SEXP)v));
 }
 
-td_tag_t td_jl_get_eltype(void *v)
+td_tag_t td_r_get_eltype(void *v)
 {
-    if (jl_is_array(v)) {
-        return jl_type_to_td(jl_tparam0(jl_typeof(v)));
-    }
-    return TD_UNKNOWN;
+  return r_type_to_td(TYPEOF((SEXP)v));
 }
 
-void *td_jl_get_dataptr(void *v)
+void *td_r_get_dataptr(void *v)
 {
-    if (jl_is_array(v))
-        return jl_array_data(v);
-    if (jl_is_byte_string(v))
-        return jl_string_data(v);
-    return jl_data_ptr(v);
+  return INTEGER( (SEXP)v );
 }
 
-size_t td_jl_get_length(void *v)
+size_t td_r_get_length(void *v)
 {
-    if (jl_is_array(v))
-        return jl_array_len(v);
-    if (jl_is_byte_string(v))
-        return jl_array_len(jl_fieldref(v,0));
-    return 1;
+  return LENGTH( SEXP(v) );
 }
 
-size_t td_jl_get_ndims(void *v)
+size_t td_r_get_ndims(void *v)
 {
-    if (jl_is_array(v))
-        return jl_array_ndims(v);
-    return 0;
+  RObject r_obj( (SEXP)v );
+  if (r_obj.hasAttribute("dim")) 
+  {
+    SEXP da = r_obj.attr("dim");
+    return LENGTH(da);
+  }
+  return 0;
 }
 
 // initialization
 
-void td_jl_init(char *home_dir)
+void td_r_init(char *home_dir)
 {
-    jl_init(home_dir);
 
-    td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
-    env->name = "julia";
+  td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
+  env->name = "r";
 
-    env->eval = &td_jl_eval;
-    env->invoke0 = &td_jl_invoke0;
-    env->invoke1 = &td_jl_invoke1;
-    //env->invoke2
-    //env->invoke3
+  env->eval = &td_r_eval;
+  env->invoke0 = &td_r_invoke0;
+  env->invoke1 = &td_r_invoke1;
+  //env->invoke2
+  //env->invoke3
 
-    //env->retain
-    //env->release
+  //env->retain
+  //env->release
 
-    env->get_type = &td_jl_get_type;
-    env->get_eltype = &td_jl_get_eltype;
-    env->get_dataptr = &td_jl_get_dataptr;
-    env->get_length = &td_jl_get_length;
-    env->get_ndims = &td_jl_get_ndims;
+  env->get_type = &td_r_get_type;
+  env->get_eltype = &td_r_get_eltype;
+  env->get_dataptr = &td_r_get_dataptr;
+  env->get_length = &td_r_get_length;
+  env->get_ndims = &td_r_get_ndims;
 
-    //env->get_dims
-    //env->get_strides
+  //env->get_dims
+  //env->get_strides
 
-    td_provide_julia(env);
+  td_provide_r(env);
 }
-
-*/
 #ifdef __cplusplus
 } //extern "C"
 #endif
