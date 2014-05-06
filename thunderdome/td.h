@@ -208,5 +208,8 @@ void td_error(char *msg);
 td_env_t *td_env_julia(char *, char*);  // to get the julia env
 void td_provide_julia(td_env_t *e);     // called by julia main if it runs
 
+td_env_t *td_env_r(char *, char*);  // to get the julia env
+void td_provide_r(td_env_t *e);     // called by julia main if it runs
+
 
 #endif
