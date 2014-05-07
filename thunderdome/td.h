@@ -65,7 +65,7 @@ typedef enum {
     TD_FLOAT, TD_DOUBLE, TD_PTR,
 
     // aggregate types
-    TD_UTF8, TD_ARRAY,
+    TD_UTF8, TD_ARRAY, TD_STRUCT,
 
     // environment-specific objects (can be queried)
     TD_OBJECT,
