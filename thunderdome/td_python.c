@@ -30,7 +30,7 @@ static td_tag_t py_type_to_td(PyObject *t)
 
 static PyObject *td_type_to_py(td_tag_t tag)
 {
-    switch (tag) {
+//    switch (tag) {
 //      case TD_INT8: return PyInt_FromLong();
 //    case TD_UINT8: return (PyObject*)py_uint8_type;
 //    case TD_INT16: return (PyObject*)py_int16_type;
@@ -44,7 +44,7 @@ static PyObject *td_type_to_py(td_tag_t tag)
 //    case TD_UTF8: return (PyObject*)py_utf8_string_type;
 //    default:
 //        return (PyObject*)py_nothing->type;
-    }
+//    }
 }
 
 // value mapping
@@ -54,7 +54,7 @@ static void to_td_val(td_val_t *out, PyObject *pVal)
 
     if (PyInt_Check(pVal)){
         out->tag = TD_INT32;
-        out->object = PyInt_AsLong(pVal);
+        out->int32_val = PyInt_AsLong(pVal);
     }
     else {
         out->owner = td_env_python(NULL, NULL);
@@ -67,9 +67,17 @@ static PyObject *from_td_val(td_val_t *v)
     PyObject *pVal;
     td_tag_t tag = td_typeof(v);
     switch (tag) {
-    case TD_INT8: TD_UINT8: TD_INT16: TD_UINT16: TD_INT32: TD_UINT32: TD_INT64: TD_UINT64:
+    case TD_INT8:
+    case TD_UINT8:
+    case TD_INT16:
+    case TD_UINT16:
+    case TD_INT32:
+    case TD_UINT32:
+    case TD_INT64:
+    case TD_UINT64:
          return PyInt_FromLong(td_int32(v));
-
+    default:
+        return v;
     }
 //    switch (tag) {
 //    case TD_FLOAT: return py_box_float32(td_float(v));
@@ -156,9 +164,28 @@ void td_py_invoke0(td_val_t *out, char *fname)
 
 void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-//    py_function_t *f = py_get_function(py_base_module, fname);
-//    PyObject *v = py_call1(f, from_td_val(arg));
-//    to_td_val(out, v);
+    printf("Here td_py_invoke1 10\n");
+    PyObject *pFunc, *pArgs, *pValue;
+    printf("Here td_py_invoke1 20\n");
+
+    pFunc = td_py_get_callable(fname);
+    if (pFunc == NULL) return;
+    printf("Here td_py_invoke1 30\n");
+
+    pArgs = PyTuple_New(1);
+    pValue = from_td_val(arg);
+    if (pValue == NULL) return;
+    PyTuple_SetItem(pArgs, 0, pValue);
+    Py_DECREF(pValue);
+
+    pValue = PyObject_CallObject(pFunc, pArgs);
+    printf("Here td_py_invoke1 40\n");
+    if (pValue == NULL) {
+        fprintf(stderr, "Error in Python call %s\n", fname);
+        return;
+    }
+    to_td_val(out, pValue);
+    printf("Here td_py_invoke1 50\n");
 }
 
 void td_py_eval(td_val_t *out, char *str)

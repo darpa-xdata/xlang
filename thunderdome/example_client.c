@@ -29,7 +29,13 @@ int main(int argc, char *argv[])
     td_val_t out_py;
     td_env_t *py = td_env_python(".",
                                  "/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/bin/python");
-    py->invoke0(&out_py,"int");
+    py->invoke0(&out_py, "int");
     printf("int() = %d\n", td_int32(&out_py));
+
+    td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+
+    py->invoke1(&out_py, "int", &arg);
+    printf("int(2) = %d\n", td_int32(&out_py));
+
     return 0;
 }
