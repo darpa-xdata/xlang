@@ -148,6 +148,20 @@ static int parse_char_token(const char **pbegin, const char *end, char token)
     }
 }
 
+static int parse_size_t(const char **pbegin, const char *end, size_t *out)
+{
+    const char *begin = *pbegin;
+    if (begin == end || !(*begin >= '0' && *begin <= '9')) {
+        return 0;
+    }
+    size_t result = 0;
+    while (*begin >= '0' && *begin <= '9') {
+        result = 10 * result + *begin++ - '0';
+    }
+    *out = result;
+    *pbegin = begin;
+}
+
 // [a-zA-Z_][a-zA-Z0-9_]*
 static int parse_name(const char **pbegin, const char *end,
                       const char **out_strbegin, const char **out_strend)
@@ -192,11 +206,13 @@ static td_ds_t *parse_dim_datashape(const char **pbegin, const char *end)
         return NULL;
     }
 
+    skip_whitespace(&begin, end);
     td_ds_t *el = parse_datashape(&begin, end);
     if (el == NULL) {
         return NULL;
     }
 
+    *pbegin = begin;
     return create_dim_ds(el, dim_size, INTPTR_MAX);
 }
 
@@ -383,7 +399,7 @@ void td_free_datashape(td_ds_t *ds)
         td_free_datashape(dsd->el);
     } else if (ds->tag == TD_PTR) {
         td_ds_ptr_t *dsp = (td_ds_ptr_t *)ds;
-        td_free_dstashape(dsp->tgt);
+        td_free_datashape(dsp->tgt);
     } else if (ds->tag == TD_STRUCT) {
         td_ds_struct_t *dss = (td_ds_struct_t *)ds;
         int i, size = dss->size;
@@ -395,5 +411,79 @@ void td_free_datashape(td_ds_t *ds)
     }
 
     free(ds);
+}
+
+void td_print_datashape(td_ds_t *ds)
+{
+    if (ds == NULL) {
+        return;
+    }
+    switch (ds->tag) {
+        case TD_INT8:
+            printf("int8");
+            break;
+        case TD_INT16:
+            printf("int16");
+            break;
+        case TD_INT32:
+            printf("int32");
+            break;
+        case TD_INT64:
+            printf("int64");
+            break;
+        case TD_UINT8:
+            printf("uint8");
+            break;
+        case TD_UINT16:
+            printf("uint16");
+            break;
+        case TD_UINT32:
+            printf("uint32");
+            break;
+        case TD_UINT64:
+            printf("uint64");
+            break;
+        case TD_FLOAT:
+            printf("float32");
+            break;
+        case TD_DOUBLE:
+            printf("float64");
+            break;
+        case TD_PTR:
+            printf("pointer[");
+            td_print_datashape(((td_ds_ptr_t *)ds)->tgt);
+            printf("]");
+            break;
+        case TD_UTF8:
+            printf("string");
+            break;
+        case TD_ARRAY: {
+            size_t dim_size = ((td_ds_dim_t *)ds)->dim_size;
+            if (dim_size == SIZE_MAX) {
+                printf("strided * ");
+            } else {
+                printf("%lld * ", (long long)dim_size);
+            }
+            td_print_datashape(((td_ds_dim_t *)ds)->el);
+            break;
+        }
+        case TD_STRUCT: {
+            printf("{ ");
+            int i, size = ((td_ds_struct_t *)ds)->size;
+            td_struct_field_t *fields = ((td_ds_struct_t *)ds)->fields;
+            for (i = 0; i < size; ++i) {
+                printf("%s : ", fields[i].name);
+                td_print_datashape(fields[i].type);
+                if (i != size - 1) {
+                    printf(", ");
+                }
+            }
+            printf(" }");
+            break;
+        }
+        default:
+            printf("<invalid datashape>");
+            break;
+    }
 }
 

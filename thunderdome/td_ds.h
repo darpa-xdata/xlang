@@ -76,3 +76,5 @@ td_ds_t *td_parse_datashape(const char *strbegin, const char *strend);
 
 void td_free_datashape(td_ds_t *ds);
 
+void td_print_datashape(td_ds_t *ds);
+

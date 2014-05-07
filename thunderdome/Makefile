@@ -22,7 +22,7 @@ R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
 
 default: all
 
-all: example_client
+all: example_client ds_roundtrip
 
 libtd.so: td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -fPIC -c td.c -o td.o
@@ -40,6 +40,10 @@ libtd_r.so: td.h libtd.so
 example_client: example_client.c td.h libtd_julia.so
 	$(CC) $(DEBUG) $< -o $@ ./libtd.so
 
+ds_roundtrip: ds_roundtrip.c td.h
+	$(CC) $(DEBUG) $< -o $@ ./libtd.so
+
 clean:
 	rm -f *.so *.o
 	rm -f example_client
+	rm -f ds_roundtrip
