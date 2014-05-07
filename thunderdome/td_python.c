@@ -7,46 +7,6 @@
 
 #include "td.h"
 
-// type mapping
-
-static td_tag_t py_type_to_td(PyObject *t)
-{
-    if (PyInt_Check(t)) return TD_INT32;
-//    if (t == (PyObject*)py_uint8_type) return TD_UINT8;
-//    if (t == (PyObject*)py_int16_type) return TD_INT16;
-//    if (t == (PyObject*)py_uint16_type) return TD_UINT16;
-//    if (t == (PyObject*)py_int32_type) return TD_INT32;
-//    if (t == (PyObject*)py_uint32_type) return TD_UINT32;
-//    if (t == (PyObject*)py_int64_type) return TD_INT64;
-//    if (t == (PyObject*)py_uint64_type) return TD_UINT64;
-//    if (t == (PyObject*)py_float32_type) return TD_FLOAT;
-//    if (t == (PyObject*)py_float64_type) return TD_DOUBLE;
-//    if (py_is_array_type(t)) return TD_ARRAY;
-//    if (t == (PyObject*)py_ascii_string_type ||
-//        t == (PyObject*)py_utf8_string_type)
-//        return TD_UTF8;
-    return TD_OBJECT;
-}
-
-static PyObject *td_type_to_py(td_tag_t tag)
-{
-//    switch (tag) {
-//      case TD_INT8: return PyInt_FromLong();
-//    case TD_UINT8: return (PyObject*)py_uint8_type;
-//    case TD_INT16: return (PyObject*)py_int16_type;
-//    case TD_UINT16: return (PyObject*)py_uint16_type;
-//    case TD_INT32: return (PyObject*)py_int32_type;
-//    case TD_UINT32: return (PyObject*)py_uint32_type;
-//    case TD_INT64: return (PyObject*)py_int64_type;
-//    case TD_UINT64: return (PyObject*)py_uint64_type;
-//    case TD_FLOAT: return (PyObject*)py_float32_type;
-//    case TD_DOUBLE: return (PyObject*)py_float64_type;
-//    case TD_UTF8: return (PyObject*)py_utf8_string_type;
-//    default:
-//        return (PyObject*)py_nothing->type;
-//    }
-}
-
 // value mapping
 
 static void to_td_val(td_val_t *out, PyObject *pVal)
@@ -55,11 +15,65 @@ static void to_td_val(td_val_t *out, PyObject *pVal)
     if (PyInt_Check(pVal)){
         out->tag = TD_INT32;
         out->int32_val = PyInt_AsLong(pVal);
+        return;
     }
-    else {
-        out->owner = td_env_python(NULL, NULL);
-        out->object = pVal;
+    else if (PyLong_Check(pVal)){
+        PyObject *pErr;
+        long v;
+        v = PyLong_AsLong(pVal);
+        if ( (pErr = PyErr_Occurred()) && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Clear();
+        }
+        else {
+            out->tag = TD_INT32;
+            out->int32_val = v;
+            return;
+        }
+
+        unsigned long vv;
+        vv = PyLong_AsUnsignedLong(pVal);
+        if ( (pErr = PyErr_Occurred()) && PyErr_ExceptionMatches(PyExc_OverflowError)){
+            PyErr_Clear();
+        }
+        else {
+            out->tag = TD_UINT32;
+            out->uint32_val = vv;
+            return;
+        }
+
+        long long vvv;
+        vvv = PyLong_AsLongLong(pVal);
+        if ( (pErr = PyErr_Occurred()) && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Clear();
+        }
+        else {
+            out->tag = TD_INT64;
+            out->int64_val = vvv;
+            return;
+        }
+
+        unsigned long long vvvv;
+        vvvv = PyLong_AsUnsignedLongLong(pVal);
+        if ( (pErr = PyErr_Occurred()) && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Clear();
+        }
+        else {
+            out->tag = TD_UINT64;
+            out->int64_val = vvvv;
+            return;
+        }
+
+        // Didn't match any pylong, revert to obj.
     }
+    else if(PyFloat_Check(pVal)) {
+        out->tag = TD_DOUBLE;
+        out->double_val = PyFloat_AsDouble(pVal);
+        return;
+    }
+
+    // Default, only get here if unable to convert above.
+    out->owner = td_env_python(NULL, NULL);
+    out->object = pVal;
 }
 
 static PyObject *from_td_val(td_val_t *v)
@@ -68,29 +82,38 @@ static PyObject *from_td_val(td_val_t *v)
     td_tag_t tag = td_typeof(v);
     switch (tag) {
     case TD_INT8:
+        return PyInt_FromLong(td_int8(v));
     case TD_UINT8:
+        return PyInt_FromLong(td_uint8(v));
     case TD_INT16:
+        return PyInt_FromLong(td_int16(v));
     case TD_UINT16:
+        return PyInt_FromLong(td_uint16(v));
     case TD_INT32:
+        return PyInt_FromLong(td_int32(v));
     case TD_UINT32:
+        return PyLong_FromUnsignedLong(td_uint32(v));
     case TD_INT64:
+        return PyLong_FromLongLong(td_int64(v));
     case TD_UINT64:
-         return PyInt_FromLong(td_int32(v));
+        return PyLong_FromUnsignedLongLong(td_uint64(v));
+    case TD_FLOAT:
+        return PyFloat_FromDouble(td_float(v));
+    case TD_DOUBLE:
+        return PyFloat_FromDouble(td_double(v));
+    case TD_UTF8:
+        return PyUnicode_DecodeUTF8(td_dataptr(v), td_length(v), "strict");
+//    case TD_ARRAY:
+//        return
+//
+//        return (PyObject*)
+//
+//
+//            py_ptr_to_array_1d((PyObject*)py_apply_array_type((py_datatype_t*)td_type_to_jl(td_eltype(v)), 1),
+//                               td_dataptr(v), td_length(v), 0);
     default:
         return v;
     }
-//    switch (tag) {
-//    case TD_FLOAT: return py_box_float32(td_float(v));
-//    case TD_DOUBLE: return py_box_float64(td_double(v));
-//    case TD_UTF8:
-//        return py_pchar_to_string(td_dataptr(v), td_length(v));
-//    case TD_ARRAY:
-//        return (PyObject*)
-//            py_ptr_to_array_1d((PyObject*)py_apply_array_type((py_datatype_t*)td_type_to_jl(td_eltype(v)), 1),
-//                               td_dataptr(v), td_length(v), 0);
-//    default:
-//        return py_nothing;
-//    }
 }
 
 // entry points
