@@ -26,7 +26,8 @@ all: example_client
 
 libtd.so: td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -fPIC -c td.c -o td.o
-	$(CC) $(DEBUG) -shared -fPIC td.o -o $@ -ldl
+	$(CC) $(DEBUG) -fPIC -c td_ds.c -o td_ds.o
+	$(CC) $(DEBUG) -shared -fPIC td.o td_ds.o -o $@ -ldl
 
 libtd_julia.so: td.h td_julia.c libtd.so
 	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/usr/include
