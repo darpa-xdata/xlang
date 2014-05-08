@@ -44,7 +44,7 @@ libtd_r.so: td.h libtd.so
 	$(R_CXX) $(DEBUG) -shared -fPIC -o $@ $(R_LDFLAGS) $(R_LIBS)
 
 example_client: example_client.c td.h libtd_julia.so libtd_python.so
-	$(CC) $(DEBUG) $< -o $@ ./libtd.so
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./libtd.so
 
 ds_roundtrip: ds_roundtrip.c td.h
 
@@ -53,7 +53,7 @@ libtd_python.so: td.h td_python.c libtd.so
 	$(CC) $(DEBUG) -shared -fPIC td_python.o -o $@ -I$(PYTHON_LDFLAG) ./libtd.so
 
 example_python: example_client.c td.h libtd_python.so
-	$(CC) $(DEBUG) $< -o $@ ./libtd.so
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 $< -o $@ ./libtd.so
 
 clean:
 	rm -f *.so *.o
