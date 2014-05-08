@@ -224,21 +224,24 @@ static PyObject *from_td_val(td_val_t *v)
 }
 
 // entry points
-int module_name(char *fname, char *modname)
+int func_module_name(char *fname, char *modname, char *funcname)
 {
     unsigned len = strlen(fname);
     int i;
 
-    for(i = 0; i > 0; --i){
-        if (fname[len] == '.'){
+    for(i = len-1; i > 0; --i){
+        if (fname[i] == '.'){
             break;
         }
     }
     if (i > 0) {
-        strncpy(fname, modname, len);
+        strncpy(modname, fname, i);
+        modname[i] = '\0';
+        strcpy(funcname, fname+(i+1));
         return 1;
     } else {
         strcpy(modname, "__builtin__");
+        strcpy(funcname, fname);
         return 1;
     }
     return 0;
@@ -248,7 +251,9 @@ int module_name(char *fname, char *modname)
 PyObject* td_py_get_callable(char *fname)
 {
     PyObject *pName, *pModule, *pFunc;
-    char modname[32] = "__builtin__";
+    char modname[128];
+    char funcname[128];
+    func_module_name(fname, modname, funcname);
 
     pName = PyString_FromString(modname);
     if (pName == NULL) {
@@ -263,7 +268,7 @@ PyObject* td_py_get_callable(char *fname)
         return NULL;
     }
 
-    pFunc = PyObject_GetAttrString(pModule, fname);
+    pFunc = PyObject_GetAttrString(pModule, funcname);
     Py_DECREF(pModule);
     if (pFunc == NULL || !PyCallable_Check(pFunc)){
         fprintf(stderr, "Could not get a callable %s\n", fname);
