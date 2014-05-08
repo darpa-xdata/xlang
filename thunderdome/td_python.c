@@ -11,8 +11,6 @@
 
 #include "td.h"
 
-// value mapping
-
 static td_tag_t longlong_to_td(long long v)
 {
     if (INT32_MIN <= v <= INT32_MAX) return TD_INT32;
@@ -278,34 +276,26 @@ PyObject* td_py_get_callable(char *fname)
 
 void td_py_invoke0(td_val_t *out, char *fname)
 {
-    printf("Here td_py_invoke0 10\n");
     PyObject *pFunc, *pArgs, *pValue;
-    printf("Here td_py_invoke0 20\n");
 
     pFunc = td_py_get_callable(fname);
     if (pFunc == NULL) return;
-    printf("Here td_py_invoke0 30\n");
 
     pArgs = PyTuple_New(0);
     pValue = PyObject_CallObject(pFunc, pArgs);
-    printf("Here td_py_invoke0 40\n");
     if (pValue == NULL) {
         fprintf(stderr, "Error in Python call %s\n", fname);
         return;
     }
     to_td_val(out, pValue);
-    printf("Here td_py_invoke0 50\n");
 }
 
 void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-    printf("Here td_py_invoke1 10\n");
     PyObject *pFunc, *pArgs, *pValue;
-    printf("Here td_py_invoke1 20\n");
 
     pFunc = td_py_get_callable(fname);
     if (pFunc == NULL) return;
-    printf("Here td_py_invoke1 30\n");
 
     pArgs = PyTuple_New(1);
     pValue = from_td_val(arg);
@@ -314,13 +304,11 @@ void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
     Py_DECREF(pValue);
 
     pValue = PyObject_CallObject(pFunc, pArgs);
-    printf("Here td_py_invoke1 40\n");
     if (pValue == NULL) {
         fprintf(stderr, "Error in Python call %s\n", fname);
         return;
     }
     to_td_val(out, pValue);
-    printf("Here td_py_invoke1 50\n");
 }
 
 void td_py_eval(td_val_t *out, char *str)
@@ -368,18 +356,14 @@ size_t td_py_get_ndims(void *v)
 
 void td_py_init(char *homedir)
 {
-    printf("Here td_py_init 10\n");
     Py_Initialize();
-    printf("Here td_py_init 20\n");
 
     td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
     env->name = "python";
-    printf("Here td_py_init 30\n");
 
     env->eval = &td_py_eval;
     env->invoke0 = &td_py_invoke0;
     env->invoke1 = &td_py_invoke1;
-    printf("Here td_py_init 40\n");
     //env->invoke2
     //env->invoke3
 
@@ -391,12 +375,10 @@ void td_py_init(char *homedir)
     env->get_dataptr = &td_py_get_dataptr;
     env->get_length = &td_py_get_length;
     env->get_ndims = &td_py_get_ndims;
-    printf("Here td_py_init 50\n");
 
     //env->get_dims
     //env->get_strides
 
     td_provide_python(env);
-    printf("Here td_py_init 60\n");
 }
 
