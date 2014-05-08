@@ -43,7 +43,7 @@ libtd_r.so: td.h libtd.so
 	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
 	$(R_CXX) $(DEBUG) -shared -fPIC -o $@ $(R_LDFLAGS) $(R_LIBS)
 
-example_client: example_client.c td.h libtd_julia.so
+example_client: example_client.c td.h libtd_julia.so libtd_python.so
 	$(CC) $(DEBUG) $< -o $@ ./libtd.so
 
 ds_roundtrip: ds_roundtrip.c td.h
