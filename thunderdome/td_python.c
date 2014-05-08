@@ -1,4 +1,5 @@
 #include "Python.h"
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/ndarrayobject.h>
 
 #include <stdio.h>
@@ -14,9 +15,9 @@
 
 static td_tag_t longlong_to_td(long long v)
 {
-	if (INT32_MIN <= v <= INT32_MAX) return TD_INT32;
-	else if (0 <= v <= UINT32_MAX) return TD_UINT32;
-	else return TD_INT64;
+    if (INT32_MIN <= v <= INT32_MAX) return TD_INT32;
+    else if (0 <= v <= UINT32_MAX) return TD_UINT32;
+    else return TD_INT64;
 }
 
 static td_tag_t py_type_to_td(PyObject *pVal)
@@ -67,12 +68,22 @@ static td_tag_t py_type_to_td(PyObject *pVal)
     else if (PyString_Check(pVal)) {
         return TD_UTF8;
     }
+    else if (PyArray_Check(pVal)) {
+        return TD_ARRAY;
+    }
     return TD_OBJECT;
+}
+
+static td_tag_t numpy_type_to_td(int type_num)
+{
+    return TD_FLOAT;
 }
 
 static void to_td_val(td_val_t *out, PyObject *pVal)
 {
     PyObject *pStr;
+    td_array_t *arr;
+    PyArrayObject *pArr;
     td_tag_t tag = py_type_to_td(pVal);
     switch (tag) {
     case TD_INT32:
@@ -110,14 +121,14 @@ static void to_td_val(td_val_t *out, PyObject *pVal)
         out->tag = TD_UTF8;
         out->object = (void*) obj;
         break;
-//    case TD_ARRAY:
-//        return
-//
-//        return (PyObject*)
-//
-//
-//            py_ptr_to_array_1d((PyObject*)py_apply_array_type((py_datatype_t*)td_type_to_jl(td_eltype(v)), 1),
-//                               td_dataptr(v), td_length(v), 0);
+    case TD_ARRAY:
+        arr = (td_array_t *)malloc(sizeof(td_array_t));
+        pArr = (PyArrayObject *) pVal;
+        arr->data = PyArray_DATA(pArr);
+        arr->length = PyArray_SIZE(pArr);
+        arr->eltype = numpy_type_to_td(PyArray_TYPE(pArr));
+        arr->ndims = PyArray_NDIM(pArr);
+        break;
     default:
         out->tag = TD_OBJECT;
         out->owner = td_env_python(NULL, NULL);
@@ -185,9 +196,12 @@ int module_name(char *fname, char *modname)
     }
     if (i > 0) {
         strncpy(fname, modname, len);
+        return 1;
     } else {
         strcpy(modname, "__builtin__");
+        return 1;
     }
+    return 0;
 }
 
 
@@ -269,8 +283,8 @@ void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 
 void td_py_eval(td_val_t *out, char *str)
 {
-//    PyObject *v = py_eval_string(str);
-//    to_td_val(out, v);
+    PyObject *v = PyRun_String(str, 0, NULL, NULL);
+    to_td_val(out, v);
 }
 
 td_tag_t td_py_get_type(void *v)
@@ -280,35 +294,32 @@ td_tag_t td_py_get_type(void *v)
 
 td_tag_t td_py_get_eltype(void *v)
 {
-//    if (py_is_array(v)) {
-//        return py_type_to_td(py_tparam0(py_typeof(v)));
-//    }
+    if (PyArray_Check( (PyObject *) v)){
+        PyArrayObject *arr = (PyArrayObject *)v;
+        return numpy_type_to_td(PyArray_TYPE(v));
+    }
     return TD_UNKNOWN;
 }
 
 void *td_py_get_dataptr(void *v)
 {
-//    if (py_is_array(v))
-//        return py_array_data(v);
-//    if (py_is_byte_string(v))
-//        return py_string_data(v);
-//    return py_data_ptr(v);
+    if (PyArray_Check( (PyObject *) v))
+        return PyArray_DATA( (PyArrayObject *) v);
+    return NULL;
 }
 
 size_t td_py_get_length(void *v)
 {
-//    if (py_is_array(v))
-//        return py_array_len(v);
-//    if (py_is_byte_string(v))
-//        return py_array_len(py_fieldref(v,0));
-//    return 1;
+    if (PyArray_Check( (PyObject *) v))
+        return PyArray_SIZE( (PyArrayObject *)v);
+    return 1;
 }
 
 size_t td_py_get_ndims(void *v)
 {
-//    if (py_is_array(v))
-//        return py_array_ndims(v);
-//    return 0;
+    if (PyArray_Check( (PyObject *) v))
+        return PyArray_NDIM( (PyArrayObject *)v);
+    return 0;
 }
 
 // initialization
