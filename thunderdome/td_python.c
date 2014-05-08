@@ -1,4 +1,5 @@
 #include "Python.h"
+#include <numpy/ndarrayobject.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,8 +70,6 @@ static td_tag_t py_type_to_td(PyObject *pVal)
     return TD_OBJECT;
 }
 
-
-
 static void to_td_val(td_val_t *out, PyObject *pVal)
 {
     PyObject *pStr;
@@ -126,6 +125,18 @@ static void to_td_val(td_val_t *out, PyObject *pVal)
     }
 }
 
+static PyObject *pyarray_from_td_val(td_val_t *v){
+    td_array_t *arr;
+    arr = (td_array_t *) td_dataptr(v);
+    npy_intp arr_shape[arr->ndims];
+    for (size_t i=0; i<arr->ndims; ++i) arr_shape[i] = arr->length;
+
+    return PyArray_SimpleNewFromData(arr->ndims,
+                                     arr_shape,
+                                     NPY_FLOAT,
+                                     arr->data);
+}
+
 static PyObject *from_td_val(td_val_t *v)
 {
     PyObject *pVal;
@@ -153,14 +164,8 @@ static PyObject *from_td_val(td_val_t *v)
         return PyFloat_FromDouble(td_double(v));
     case TD_UTF8:
         return PyUnicode_DecodeUTF8(td_dataptr(v), td_length(v), "strict");
-//    case TD_ARRAY:
-//        return
-//
-//        return (PyObject*)
-//
-//
-//            py_ptr_to_array_1d((PyObject*)py_apply_array_type((py_datatype_t*)td_type_to_jl(td_eltype(v)), 1),
-//                               td_dataptr(v), td_length(v), 0);
+    case TD_ARRAY:
+        return pyarray_from_td_val(v);
     default:
         td_error("Cannot convert td type to Python.\n");
         return pVal;
