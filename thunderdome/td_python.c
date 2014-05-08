@@ -309,11 +309,14 @@ void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
     Py_DECREF(pValue);
 
     pValue = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pFunc);
+    Py_DECREF(pArgs);
     if (pValue == NULL) {
         fprintf(stderr, "Error in Python call %s\n", fname);
         return;
     }
     to_td_val(out, pValue);
+    Py_DECREF(pValue);
 }
 
 void td_py_eval(td_val_t *out, char *str)
