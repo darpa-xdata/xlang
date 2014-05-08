@@ -76,7 +76,49 @@ static td_tag_t py_type_to_td(PyObject *pVal)
 
 static td_tag_t numpy_type_to_td(int type_num)
 {
-    return TD_FLOAT;
+    switch (type_num) {
+    case NPY_BOOL:
+        return TD_INT8;
+    case NPY_BYTE:
+        return TD_INT8;
+    case NPY_UBYTE:
+        return TD_UINT8;
+    case NPY_SHORT:
+        return TD_INT16;
+    case NPY_USHORT:
+        return TD_UINT16;
+    case NPY_INT:
+        return TD_INT32;
+    case NPY_UINT:
+        return TD_UINT32;
+    case NPY_LONG:
+#if INT32_MAX==LONG_MAX
+        return TD_INT32;
+#else
+        return TD_INT64;
+#endif
+    case NPY_ULONG:
+#if INT32_MAX==LONG_MAX
+        return TD_UINT32;
+#else
+        return TD_UINT64;
+#endif
+    case NPY_LONGLONG:
+        return TD_INT64;
+    case NPY_ULONGLONG:
+        return TD_UINT64;
+    case NPY_FLOAT:
+    case NPY_CFLOAT:
+        return TD_FLOAT;
+    case NPY_DOUBLE:
+    case NPY_CDOUBLE:
+        return TD_DOUBLE;
+    case NPY_STRING:
+    case NPY_UNICODE:
+        return TD_UTF8;
+    default:
+        return TD_UNKNOWN;
+    }
 }
 
 static void to_td_val(td_val_t *out, PyObject *pVal)
