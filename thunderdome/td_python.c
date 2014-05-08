@@ -13,8 +13,8 @@
 
 static td_tag_t longlong_to_td(long long v)
 {
-    if (INT32_MIN <= v <= INT32_MAX) return TD_INT32;
-    else if (0 <= v <= UINT32_MAX) return TD_UINT32;
+    if (INT32_MIN <= v && v <= INT32_MAX) return TD_INT32;
+    else if (0 <= v && v <= UINT32_MAX) return TD_UINT32;
     else return TD_INT64;
 }
 
