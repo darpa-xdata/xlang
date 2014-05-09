@@ -12,7 +12,7 @@ export JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64
 echo JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64 | sudo tee -a /etc/environment
 
 # Ubuntu Vagrant bug workaround (mesg n hangs in vagrant when no tty exists)
-sudo cat /root/.profile | sudo sed 's/^.*mesg n//' | sudo tee /root/.profile_fixed
+sudo cat /root/.profile | sudo sed 's/^.*mesg n//' | sudo tee /root/.profile
 
 # Add your deployment scripts here:
 sudo $scriptdir/helloworld.sh
