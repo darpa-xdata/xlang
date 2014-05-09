@@ -43,3 +43,9 @@ $ # vagrant gem install vagrant-vbguest
 
 $ # For vagrant 1.1.5+ (thanks Lars Haugseth):
 $ vagrant plugin install vagrant-vbguest
+
+Troubleshooting:
+If deployment fails because the /vagrant directory on the guest operating system fails to mount, this is potentially an incompatibility with VirtualBox Guest Additions. To fix this, vagrant ssh into the system and run the following command:
+sudo ln -s /opt/VBoxGuestAdditions-4.3.10/lib/VBoxGuestAdditions /usr/lib/VBoxGuestAdditions
+Then exit the guest OS and type vagrant reload. 
+
