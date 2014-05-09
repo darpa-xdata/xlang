@@ -35,18 +35,13 @@ Destroys the vm (and all the cruft inside of it). vagrant up will reprovision an
 
 More info at http://www.vagrantup.com/
 
-Other notes:
+Other notes and troubleshooting:
 
-To have Vagrant sync the Guest Additions for Virtual Box do the following:
-$ # For vagrant < 1.1.5:
-$ # vagrant gem install vagrant-vbguest
+To have Vagrant sync the Guest Additions for Virtual Box do the following:<br>
+For vagrant < 1.1.5: <code>vagrant gem install vagrant-vbguest</code><br>
+For vagrant 1.1.5+: <code> vagrant plugin install vagrant-vbguest</code>
 
-$ # For vagrant 1.1.5+ (thanks Lars Haugseth):
-$ vagrant plugin install vagrant-vbguest
-
-Troubleshooting:
-
-If deployment fails because the /vagrant directory on the guest operating system fails to mount, this is potentially an incompatibility with VirtualBox Guest Additions. To fix this, <code>vagrant ssh</code> into the system and run the following command:<br>
+If deployment still fails because the /vagrant directory on the guest operating system fails to mount, this is potentially an incompatibility with VirtualBox Guest Additions. To fix this, <code>vagrant ssh</code> into the system and run the following command:<br>
 <code>sudo ln -s /opt/VBoxGuestAdditions-4.3.10/lib/VBoxGuestAdditions /usr/lib/VBoxGuestAdditions</code><br>
 Then exit the guest OS and type <code>vagrant reload</code>. The system should provision cleanly now.
 This problem was encountered after upgrading a host operating system to Trusty Tahr (14.04) May 2014.
