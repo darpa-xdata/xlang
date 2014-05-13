@@ -37,12 +37,14 @@
 #define _OS_DARWIN_
 #endif
 
+#ifndef SHLIB_EXT
 #if defined(__APPLE__)
 #define SHLIB_EXT ".dylib"
 #elif defined(_OS_WINDOWS_)
 #define SHLIB_EXT ".dll"
 #else
 #define SHLIB_EXT ".so"
+#endif
 #endif
 
 #ifdef _OS_WINDOWS_
@@ -211,5 +213,7 @@ void td_provide_julia(td_env_t *e);     // called by julia main if it runs
 td_env_t *td_env_r(char *, char*);  // to get the julia env
 void td_provide_r(td_env_t *e);     // called by julia main if it runs
 
+td_env_t *td_env_python(char *, char*);  // to get the julia env
+void td_provide_python(td_env_t *e);     // called by julia main if it runs
 
 #endif

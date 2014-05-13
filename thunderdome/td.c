@@ -112,3 +112,30 @@ void td_provide_julia(td_env_t *e)
 {
     cached_julia_env = e;
 }
+
+static td_env_t *cached_python_env=NULL;
+
+td_env_t *td_env_python(char *plugin_path, char *python_path)
+{
+    char path[512];
+
+    if (cached_python_env == NULL) {
+        snprintf(path, sizeof(path), "%s%s%s%s",
+                 plugin_path, PATHSEPSTRING, "libtd_python", ".so"); //SHLIB_EXT);
+        void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
+        if (h == NULL) {
+            fprintf(stderr, "%s\n", dlerror());
+            td_error("could not load libpython");
+        }
+        void (*init)(char*) = dlsym(h, "td_py_init");
+        init(python_path);
+        assert(cached_python_env);
+    }
+
+    return cached_python_env;
+}
+
+void td_provide_python(td_env_t *e)
+{
+    cached_python_env = e;
+}

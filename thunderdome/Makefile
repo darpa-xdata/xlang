@@ -1,6 +1,12 @@
 # The worst makefile in the world!
 
-JULIA_PATH = /home/jeff/src/julia2/julia
+JULIA_PATH = /Applications/Julia-0.2.1.app/Contents/Resources/julia/
+
+
+PYTHON_CFLAG = -I/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/include/python2.7 \
+               -I/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/lib/python2.7/site-packages/numpy/core/include
+PYTHON_LIBDIR = /Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/lib
+PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
 
 DEBUG = -g
 
@@ -30,18 +36,24 @@ libtd.so: td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -shared -fPIC td.o td_ds.o -o $@ -ldl
 
 libtd_julia.so: td.h td_julia.c libtd.so
-	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/usr/include
+	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/include/julia
 	$(CC) $(DEBUG) -shared -fPIC td_julia.o -o $@ $(JULIA_PATH)/usr/lib/libjulia.so ./libtd.so
 
 libtd_r.so: td.h libtd.so
 	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
 	$(R_CXX) $(DEBUG) -shared -fPIC -o $@ $(R_LDFLAGS) $(R_LIBS)
 
-example_client: example_client.c td.h libtd_julia.so
-	$(CC) $(DEBUG) $< -o $@ ./libtd.so
+example_client: example_client.c td.h libtd_julia.so libtd_python.so
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./libtd.so
 
 ds_roundtrip: ds_roundtrip.c td.h
-	$(CC) $(DEBUG) $< -o $@ ./libtd.so
+
+libtd_python.so: td.h td_python.c libtd.so
+	$(CC) $(DEBUG) -fPIC -c td_python.c -o td_python.o $(PYTHON_CFLAG)
+	$(CC) $(DEBUG) -shared -fPIC td_python.o -o $@ -I$(PYTHON_LDFLAG) ./libtd.so
+
+example_python: example_client.c td.h libtd_python.so
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 $< -o $@ ./libtd.so
 
 clean:
 	rm -f *.so *.o
