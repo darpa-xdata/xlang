@@ -1,15 +1,27 @@
 #!/usr/bin/env bash
 
-# Install git and emacs
-sudo apt-get -y install git-all emacs24-nox gfortran m4 gcc g++ make
-export JULIA_VAGRANT_BUILD=1
+apt-get update -qq -y
+apt-get install g++ git make gfortran -y
 
-# setup julia
 if [[ ! -e "julia" ]]; then
     git clone https://github.com/JuliaLang/julia
 fi
-cd julia
-make LLVM_CONFIG=llvm-config-3.3 USE_BLAS64=0
-sudo ln -s /home/vagrant/julia/julia /usr/bin/julia
+if [[ ! -e "Stage.jl" ]]; then
+    git clone https://github.com/SaltPork/Stage.jl
+fi
 
+cd julia
+make
+rm -f /usr/bin/julia
+cd /usr/bin
+ln -s /home/vagrant/julia/julia .
+
+# install packages
+cd /home/vagrant
+sudo -u vagrant echo "$HOME"
+sudo -u vagrant echo 'Pkg.init(); Pkg.add("GZip");' > /tmp/init.jl
+sudo -u vagrant -H /usr/bin/julia /tmp/init.jl
+cd /home/vagrant/.julia/v0.3
+sudo -u vagrant rm -f Stage.jl
+sudo -u vagrant ln -s /home/vagrant/Stage.jl .
 
