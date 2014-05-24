@@ -8,7 +8,7 @@ log = Log(STDERR)
 
 function getfile(url, fn; expected_size = -1)
   if filesize(fn) != expected_size
-    @timer log "downloading $fn from $url" downloadurl(url, fn)
+    @timer log "downloading $fn from $url" download(url, fn)
   else
     @info log "$fn already downloaded, using local version."
   end
