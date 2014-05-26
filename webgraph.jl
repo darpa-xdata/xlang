@@ -16,6 +16,12 @@ end
 
 zopen(f::Function, fn) = ismatch(r"^.*\.gz$", fn) ? gzopen(f, fn) : open(f, fn)
 
+function zcountlines(fn)
+  f      = ismatch(r"^.*\.gz$", fn) ? gzopen(fn) : open(fn)
+  nlines = countlines(f)
+  close(f)
+  return nlines
+end
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Graph Type
@@ -34,7 +40,7 @@ function GraphPre(nodefn, arcfn)
   g = Graph()
 
   # read the index
-  @timer log "reading of node lengths" len = countlines(nodefn)
+  @timer log "reading of node lengths" len = zcountlines(nodefn)
   g.names = Array(String, len)
 
   @timer log "reading node names" zopen(nodefn) do f
@@ -46,7 +52,7 @@ function GraphPre(nodefn, arcfn)
   @info log "read $(length(g.names)) arcs."
 
   # read arcs
-  @timer log "reading arc lengths" len = countlines(arcfn)
+  @timer log "reading arc lengths" len = zcountlines(arcfn)
 
   g.sources = Array(Int64, len)
   g.dests   = Array(Int64, len)
@@ -74,7 +80,7 @@ function Graph(nodefn, arcfn)
   @info log "read $(length(g.names)) nodes."
 
   # read arcs
-  @timer log "reading arc lengths" len = countlines(arcfn)
+  @timer log "reading arc lengths" len = zcountlines(arcfn)
 
   g.sources = Array(Int64, len)
   g.dests   = Array(Int64, len)
@@ -82,6 +88,7 @@ function Graph(nodefn, arcfn)
 
   @timer log "reading arcs" zopen(arcfn) do f
     try
+      print(log, "")
       for (i, line) in enumerate(eachline(f))
         arc = split(line, "\t")
         g.sources[i] = int64(arc[1]) + 1
@@ -123,7 +130,7 @@ function main()
   # (2) call analytics via TD
 
   # test that the matrix is OK
-  #s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=10, ritzvec=true)
+  #s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
 
   # pca        = @spawn td("r_pca", g)
   # modularity = @spawn td("j_louvain", g)
