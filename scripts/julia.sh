@@ -19,7 +19,7 @@ ln -s /home/vagrant/julia/julia .
 # install packages
 cd /home/vagrant
 sudo -u vagrant echo "$HOME"
-sudo -u vagrant echo 'Pkg.init(); Pkg.add("GZip");' > /tmp/init.jl
+sudo -u vagrant echo 'Pkg.init(); Pkg.add("GZip"); Pkg.add("Datetime")' > /tmp/init.jl
 sudo -u vagrant -H /usr/bin/julia /tmp/init.jl
 cd /home/vagrant/.julia/v0.3
 sudo -u vagrant rm -f Stage.jl
