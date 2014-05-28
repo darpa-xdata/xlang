@@ -142,5 +142,21 @@ function main()
   # t = @spawn td("p_tangelo", modularity)
 end
 
-main()
+function test()
+  # (1) Read and setup data structures
+  g   = Graph("pld-index-sample.gz", "pld-arc-sample.gz")
+  adj = sparse(g.sources, g.dests, ones(length(g.sources)))
+  
+  # (2) call analytics via TD
+
+  # test that the matrix is OK
+  s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
+  @info log "$(s)"
+end
+
+if length(ARGS) > 0 && ARGS[1] == "test"
+  test()
+else
+  main()
+end
 
