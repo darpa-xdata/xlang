@@ -114,10 +114,58 @@ function Graph(nodefn, arcfn)
   return g
 end
 
+function name2tld(name :: String)
+  m = match(r"^.*\.(.*)$", name)
+  if m != nothing
+    return m.captures[1]
+  else
+    return name
+  end
+end
+
+function tldcluster(graph :: Graph)
+  # analyze node names
+  tldindex = (String=>Int64)[]
+  tldnames = (String)[]
+  tidx     = 1
+  for name in graph.names
+    t         = name2tld(name)
+    if !(t in keys(tldindex))
+      tldindex[t] = tidx
+      tidx       += 1
+      push!(tldnames, t)
+    end
+  end
+
+  # gather arcs
+  arcset   = [ Set{Int64}() for x = 1:length(tldnames) ]
+  arcindex = 1
+  for (idx, tldname) in enumerate(map(n -> name2tld(n), graph.names))
+    srcidx = tldindex[tldname]
+    while arcindex < length(graph.sources) && graph.sources[arcindex] == idx
+      target          = name2tld(graph.names[graph.dests[arcindex]])
+      push!(arcset[srcidx], tldindex[target])
+      arcindex       += 1
+    end
+  end
+
+  # construct final arcset
+  numarcs = reduce(+, map(x -> length(x), arcset))
+  srcs    = Array(Int64, numarcs) 
+  dests   = Array(Int64, numarcs) 
+  ai      = 1
+  for i = 1:length(arcset), j = 1:length(arcset[i])
+    srcs[ai]  = i
+    dests[ai] = j
+    ai       += 1
+  end
+
+  return Graph(tldnames, srcs, dests)
+end
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------------------------------------------------------------
-
 function main()
   # (0) Download files as needed
   getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-index.gz", "pld-index.gz"; expected_size = 311068910)
@@ -125,12 +173,16 @@ function main()
 
   # (1) Read and setup data structures
   g   = Graph("pld-index.gz", "pld-arc.gz")
-  adj = sparse(g.sources, g.dests, ones(length(g.sources)))
+  #adj = sparse(g.sources, g.dests, ones(length(g.sources)))
   
   # (2) call analytics via TD
 
   # test that the matrix is OK
   #s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
+  
+  # test 2 for Jeff: tld cluster stub/mock
+  subg = tldcluster(g)
+  println(subg) # should be a fully connected, 4 node graph
 
   # pca        = @spawn td("r_pca", g)
   # modularity = @spawn td("j_louvain", g)
@@ -152,6 +204,10 @@ function test()
   # test that the matrix is OK
   s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
   @info log "$(s)"
+
+  # test 2 for Jeff: tld cluster stub/mock
+  subg = tldcluster(g)
+  @info log "tld graph == $subg" # should be a fully connected, 4 node graph
 end
 
 if length(ARGS) > 0 && ARGS[1] == "test"
