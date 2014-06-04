@@ -45,7 +45,7 @@ function GraphPre(nodefn, arcfn)
 
   @timer log "reading node names" zopen(nodefn) do f
     for (i, line) in enumerate(eachline(f))
-      l = split(strip(line), "\t")
+      l = split(strip(line), '\t')
       g.names[i] = l[1]
     end
   end
@@ -58,7 +58,7 @@ function GraphPre(nodefn, arcfn)
   g.dests   = Array(Int64, len)
   @timer log "reading arcs" zopen(arcfn) do f
     for (i, arcl) in enumerate(eachline(f))
-      arc          = split(strip(arcl[2]), "\t")
+      arc          = split(strip(arcl[2]), '\t')
       g.sources[i] = int64(arc[1])
       g.dests[i]   = int64(arc[2])
     end
@@ -73,11 +73,17 @@ function Graph(nodefn, arcfn)
 
   # read the index
   @timer log "reading node names" zopen(nodefn) do f
-    for l in map(x -> split(strip(x), "\t"), eachline(f))
+    for l in map(x -> split(strip(x), '\t'), eachline(f))
       push!(g.names, l[1])
     end
   end
   @info log "read $(length(g.names)) nodes."
+
+  # test
+  #@timer log "[test] name2tld" tnames = [ name2tld(g.names[i]) for i = 1:1_000_000 ]
+  #@info log "tnames = $(length(tnames))"
+  #@timer log "[test] splittld" nnames = [ splittld(g.names[i]) for i = 1:1_000_000 ]
+  #@info log "tnames = $(length(nnames))"
 
   # read arcs
   @timer log "reading arc lengths" len = zcountlines(arcfn)
@@ -90,7 +96,7 @@ function Graph(nodefn, arcfn)
     try
       print(log, "")
       for (i, line) in enumerate(eachline(f))
-        arc = split(line, "\t")
+        arc = split(line, '\t')
         g.sources[i] = int64(arc[1]) + 1
         g.dests[i] = int64(arc[2]) + 1
         if i % 200_000 == 0
@@ -114,50 +120,62 @@ function Graph(nodefn, arcfn)
   return g
 end
 
+global const pattern = r"^.*\.(.*)$"
+
 function name2tld(name :: String)
-  m = match(r"^.*\.(.*)$", name)
-  if m != nothing
-    return m.captures[1]
-  else
-    return name
-  end
+  m = match(pattern, name)
+  return string(m == nothing ? name : m.captures[1])
+end
+
+function splittld(name :: String)
+  va = split(name, '.')
+  return va[end]
 end
 
 function tldcluster(graph :: Graph)
+  @timer log "names -> tld" tnames = [ name2tld(graph.names[i]) for i = 1:length(graph.names) ]
+
   # analyze node names
   tldindex = (String=>Int64)[]
   tldnames = (String)[]
   tidx     = 1
-  for name in graph.names
-    t         = name2tld(name)
-    if !(t in keys(tldindex))
-      tldindex[t] = tidx
-      tidx       += 1
-      push!(tldnames, t)
+  @timer log "making name index" begin
+    for t in tnames
+      if !(t in keys(tldindex))
+        tldindex[t] = tidx
+        tidx       += 1
+        push!(tldnames, t)
+      end
     end
   end
 
   # gather arcs
+  gc_disable()
   arcset   = [ Set{Int64}() for x = 1:length(tldnames) ]
   arcindex = 1
-  for (idx, tldname) in enumerate(map(n -> name2tld(n), graph.names))
-    srcidx = tldindex[tldname]
-    while arcindex < length(graph.sources) && graph.sources[arcindex] == idx
-      target          = name2tld(graph.names[graph.dests[arcindex]])
-      push!(arcset[srcidx], tldindex[target])
-      arcindex       += 1
+  @timer log "making arcsets" begin
+    for (idx, tldname) in enumerate(tnames)
+      srcidx = tldindex[tldname]
+      while arcindex < length(graph.sources) && graph.sources[arcindex] == idx
+        target          = tnames[graph.dests[arcindex]]
+        push!(arcset[srcidx], tldindex[target])
+        arcindex       += 1
+      end
     end
   end
+  gc_enable()
 
   # construct final arcset
   numarcs = reduce(+, map(x -> length(x), arcset))
   srcs    = Array(Int64, numarcs) 
   dests   = Array(Int64, numarcs) 
   ai      = 1
-  for i = 1:length(arcset), j = 1:length(arcset[i])
-    srcs[ai]  = i
-    dests[ai] = j
-    ai       += 1
+  @timer log "final arcs" begin
+    for i = 1:length(arcset), j = 1:length(arcset[i])
+      srcs[ai]  = i
+      dests[ai] = j
+      ai       += 1
+    end
   end
 
   return Graph(tldnames, srcs, dests)
@@ -181,7 +199,7 @@ function main()
   #s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
   
   # test 2 for Jeff: tld cluster stub/mock
-  subg = tldcluster(g)
+  @timer log "tld clustering" subg = tldcluster(g)
   println(subg) # should be a fully connected, 4 node graph
 
   # pca        = @spawn td("r_pca", g)
