@@ -44,8 +44,11 @@ int main(int argc, char *argv[])
 
 
     td_val_t out_java;
+
+    printf("got here 1 ");
     //td_env_t *java_env = td_env_java(".", "");
-   td_env_t *java_env = get_java();
+    td_env_t *java_env = get_java();
+    printf("got here 2 ");
 
     java_env->invoke0(&out_java, "int");
     printf("int() = %d\n", td_int32(&out_java));

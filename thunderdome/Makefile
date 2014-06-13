@@ -64,6 +64,10 @@ example_java_client2: example_client.c td.h td_java.c
 	$(CC) $(DEBUG) -D__int64=int64_t -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
 	$(CC) $(DEBUG) $< -o $@ ./libtd.so 
 
+simple: td.h td_ds.h td.c td_ds.c example_client.c td_java.c
+	$(CC) $(DEBUG) -static -D__int64=int64_t -fPIC td.c td_ds.c example_client.c td_java.c -o simple -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32 "$(JAVA_HOME)"/jre/bin/server/jvm.dll 
+
+
 ds_roundtrip: ds_roundtrip.c td.h
 
 libtd_python.so: td.h td_python.c libtd.so
@@ -77,3 +81,5 @@ clean:
 	rm -f *.so *.o
 	rm -f example_client
 	rm -f ds_roundtrip
+	rm -f simple
+	
