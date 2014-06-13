@@ -8,6 +8,8 @@ PYTHON_CFLAG = -I/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaco
 PYTHON_LIBDIR = /Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/lib
 PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
 
+JAVA_PATH = $JAVA_HOME/lib
+
 DEBUG = -g
 
 # R parameters.
@@ -25,6 +27,8 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
+CC = cc -v  
+#CC = cc -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
 
 default: all
 
@@ -42,9 +46,23 @@ libtd_julia.so: td.h td_julia.c libtd.so
 libtd_r.so: td.h libtd.so
 	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
 	$(R_CXX) $(DEBUG) -shared -fPIC -o $@ $(R_LDFLAGS) $(R_LIBS)
+	
+# for windows for now...? do we have to make a dll??
+libtd_java.so: td.h td_java.c libtd.so
+	$(CC) $(DEBUG) -D__int64=int64_t -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
+#	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include
+	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/bin/server/jvm.dll ./libtd.so
 
 example_client: example_client.c td.h libtd_julia.so libtd_python.so
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./libtd.so
+	
+example_java_client: example_client.c td.h libtd_java.so 
+	$(CC) $(DEBUG) $< -o $@ ./libtd.so ./libtd_java.so "$(JAVA_HOME)"/jre/bin/server/jvm.dll
+#	$(CC) $(DEBUG) -o $@ ./libtd.so ./libtd_java.so "$(JAVA_HOME)"/jre/bin/server/jvm.dll
+	
+example_java_client2: example_client.c td.h td_java.c
+	$(CC) $(DEBUG) -D__int64=int64_t -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
+	$(CC) $(DEBUG) $< -o $@ ./libtd.so 
 
 ds_roundtrip: ds_roundtrip.c td.h
 
