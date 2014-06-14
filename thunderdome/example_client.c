@@ -4,8 +4,13 @@
 #include "td.h"
 
 int main(int argc, char *argv[])
+
+
 {
-#ifdef TD_HAS_JULIA
+    printf("got here 0 ");
+
+
+	#ifdef TD_HAS_JULIA
     // start julia
     td_env_t *jl = td_env_julia(".",
                                 "/Applications/Julia-0.2.1.app/Contents/Resources/julia/bin");
@@ -53,7 +58,8 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "int");
     printf("int() = %d\n", td_int32(&out_java));
 
-    td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+   // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+    td_val_t arg = { TD_INT32, 2 };
 
     java_env->invoke1(&out_java, "int", &arg);
     printf("int(2) = %d\n", td_int32(&out_java));

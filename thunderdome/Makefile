@@ -27,7 +27,7 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
-CC = cc -v  
+CC = gcc -v  
 #CC = cc -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
 
 default: all
@@ -65,8 +65,11 @@ example_java_client2: example_client.c td.h td_java.c
 	$(CC) $(DEBUG) $< -o $@ ./libtd.so 
 
 simple: td.h td_ds.h td.c td_ds.c example_client.c td_java.c
-	$(CC) $(DEBUG) -static -D__int64=int64_t -fPIC td.c td_ds.c example_client.c td_java.c -o simple -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32 "$(JAVA_HOME)"/jre/bin/server/jvm.dll 
+#	$(CC) $(DEBUG) -ljvm -L$(JAVA_HOME)/jre/lib/server -rpath=$(JAVA_HOME)/jre/lib/server td.c td_ds.c example_client.c td_java.c -o simple -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/darwin "$(JAVA_HOME)"/jre/lib/server/libjvm.dylib 
+	$(CC) $(DEBUG) -ljvm -L$(JAVA_HOME)/jre/lib/server  -rpath=$(JAVA_HOME)/jre/lib/server td.c td_ds.c example_client.c td_java.c -o simple -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/darwin "$(JAVA_HOME)"/jre/lib/server/libjvm.dylib 
 
+#	$(CC) $(DEBUG) -ljvm -L$(JAVA_HOME)/jre/lib/server  -dynamiclib simple -install_name @rpath/t/libjvm.dylib -o libjvm.dylib
+# ghc --make Main.hs mycbinding.o -ljvm -L<javahome>/jre/lib/server -optl-Wl,-rpath,<javahome>/jre/lib/server -o mybinary
 
 ds_roundtrip: ds_roundtrip.c td.h
 
