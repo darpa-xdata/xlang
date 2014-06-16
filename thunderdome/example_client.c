@@ -43,21 +43,23 @@ int main(int argc, char *argv[])
     printf("int(2) = %d\n", td_int32(&out_py));
 #endif
 
-
-
     td_val_t out_java;
 
     //td_env_t *java_env = td_env_java(".", "");
     td_env_t *java_env = get_java();
 
     java_env->invoke0(&out_java, "random");
-    printf("int() = %d\n", td_int32(&out_java));
+    printf("int() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
     java_env->invoke0(&out_java, "nextBool");
     printf("bool() = %d\n", td_int32(&out_java));
 
     java_env->invoke0(&out_java, "nextDouble");
-     printf("double() = %f\n", td_double(&out_java));
+    printf("double() = %f\n", td_double(&out_java));
+
+
+    java_env->invoke0(&out_java, "unknownMethod");
+    printf("void() = %f\n", td_double(&out_java));
    // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
     td_val_t arg = { TD_INT32, 2 };
 

@@ -23,6 +23,7 @@ import java.util.Random;
 public class Xlang {
   static Random random = new Random();
   public static int sqr(int n) {
+    System.out.println("arg " + n);
     return n * n;
   }
 
@@ -89,23 +90,17 @@ public class Xlang {
 
 
   public static String getReturnType(String method) {
-    //  Method[] declaredMethods = Xlang.class.getDeclaredMethods();
-    //  String[] methods = new String[declaredMethods.length];
-  //  System.out.println("getReturnType for " + method);
-
     int i = 0;
     for (Method m : Xlang.class.getDeclaredMethods()) {
       if (method.equalsIgnoreCase(m.getName())) {
 
         String s = m.getGenericReturnType().toString();
-       // System.out.println("got "+s);
 
-        return
-            s;
+        return s;
 
       }
     }
-    return "V";
+    return "NoMethod";
   }
 
   public static void main(String[] arg) {
