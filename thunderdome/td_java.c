@@ -108,6 +108,49 @@ static java_value_t *from_td_val(td_val_t *v)
 
 // entry points
 
+
+char setReturnTdVal(const char* ret) {
+	if (strcmp(ret, "boolean") == 0) {
+		return 'Z'; // how do we represent a null?
+	} else if (strcmp(ret, "byte") == 0) {
+		return 'B';
+	} else if (strcmp(ret, "char") == 0)
+		return 'C';
+	else if (strcmp(ret, "double") == 0)
+		return 'D';
+	else if (strcmp(ret, "float") == 0)
+		return 'F';
+	else if (strcmp(ret, "int") == 0)
+		return 'I';
+	else if (strcmp(ret, "long") == 0)
+		return 'J';
+	else if (strcmp(ret, "object") == 0)
+		return 'L';
+	else if (strcmp(ret, "short") == 0)
+		return 'S';
+	else if (strcmp(ret, "void") == 0)
+		return 'V';
+	else if (strcmp(ret, "array") == 0)
+		return '[';
+	else
+		return '?';
+}
+/**
+ * boolean      Z
+ byte         B
+ char         C
+ double       D
+ float        F
+ int          I
+ long         J
+ object       L
+ short        S
+ void         V
+ array        [
+
+ * @param method
+ * @return
+ */
 void td_java_invoke0(td_val_t *out, char *fname)
 {
 	const char* mainClass = "xlang/java/Xlang";
@@ -117,9 +160,38 @@ void td_java_invoke0(td_val_t *out, char *fname)
 		return;
 
 	}
-	printf ("found Xlang class %s \n", mainClass);
-	jmethodID midMain = NULL;
-	midMain       = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "([Ljava/lang/String;)V");
+	//printf ("found Xlang class %s \n", mainClass);
+
+
+	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, "getReturnType", "(Ljava/lang/String;)Ljava/lang/String;");
+
+	if (returnType == NULL) {
+		printf("can't find Xlang method %s?\n","returnType");
+		return;
+
+	}
+	printf("found return type method for %s\n",fname);
+
+	jstring message = (*persistentJNI)->NewStringUTF(persistentJNI, fname);
+	jstring string = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, returnType,message);
+
+//	printf("got response");
+
+    const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
+
+    printf("return type for %s is %s\n",fname,returnString);
+
+    (*persistentJNI)->ReleaseStringUTFChars(persistentJNI,string, returnString);
+    (*persistentJNI)->DeleteLocalRef(persistentJNI,string);
+
+//	printf("can't find Xlang method %s?\n","returnType");
+    char buf[512];
+    char rc = setReturnTdVal(returnString);
+  //  sprintf(buf,"([Ljava/lang/String;)%c",rc);
+    sprintf(buf,"()%c",rc);
+    	printf("signature is %s\n",buf);
+
+	jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, buf);
 
 	if (midMain == NULL) {
 		printf("can't find Xlang method %s?\n",fname);
@@ -128,11 +200,53 @@ void td_java_invoke0(td_val_t *out, char *fname)
 	}
 	printf ("found Xlang method %s\n",fname);
 
-	(*persistentJNI)->CallVoidMethod(persistentJNI, mainClass, midMain);
+
+	if (strcmp(returnString, "boolean") == 0) {
+		out->int32_val = (*persistentJNI)->CallStaticBooleanMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_INT32;
+	} else if (strcmp(returnString, "byte") == 0) {
+		out->int8_val = (*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_INT8;
+
+	} else if (strcmp(returnString, "char") == 0) {
+		out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_INT8;
+
+	} else if (strcmp(returnString, "double") == 0) {
+		out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_DOUBLE;
+
+	} else if (strcmp(returnString, "float") == 0) {
+		out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_FLOAT;
+	} else if (strcmp(returnString, "int") == 0) {
+		out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_INT32;
+	} else if (strcmp(returnString, "long") == 0) {
+		out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_UINT64;
+	} else if (strcmp(returnString, "object") == 0) {
+		out->object =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_OBJECT;
+	} else if (strcmp(returnString, "short") == 0) {
+		out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_INT16;
+
+	} else if (strcmp(returnString, "void") == 0) {
+		(*persistentJNI)->CallStaticVoidMethod(persistentJNI, clsH, midMain);
+		out->tag = TD_UNKNOWN;
+
+	} else if (strcmp(returnString, "array") == 0) {
+		out->ptr_val =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, midMain);
+
+		out->tag = TD_ARRAY;
+
+	}	else
+		printf("error: unknown return value %s\n",returnString);
 
 	printf ("called Xlang method %s\n",fname);
 
-   // java_function_t *f = java_get_function(java_base_module, fname);
+	// java_function_t *f = java_get_function(java_base_module, fname);
    // java_value_t *v = java_call0(f);
   //  to_td_val(out, v);
 }
@@ -158,15 +272,10 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	}
 	printf ("found Xlang method %s\n",fname);
 
-    printf ("input %d\n",arg->int32_val);
-
-	jint val = (*persistentJNI)->CallStaticIntMethod(persistentJNI, mainClass, midMain,arg->int32_val);
+	jint val = (*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, midMain,arg->int32_val);
 	   printf("In C, the int is %d\n", val);
 	printf ("called Xlang method %s\n",fname);
     out->int32_val = val;
-	// java_function_t *f = java_get_function(java_base_module, fname);
-   // java_value_t *v = java_call1(f, from_td_val(arg));
-  //  to_td_val(out, v);
 }
 
 void td_java_eval(td_val_t *out, char *str)

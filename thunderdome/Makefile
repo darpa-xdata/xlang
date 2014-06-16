@@ -27,8 +27,7 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
-CC = gcc -v  
-#CC = cc -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/win32
+CC = gcc 
 
 default: all
 
