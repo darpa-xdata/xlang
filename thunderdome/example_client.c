@@ -7,10 +7,7 @@ int main(int argc, char *argv[])
 
 
 {
-    printf("got here 0 ");
-
-
-	#ifdef TD_HAS_JULIA
+#ifdef TD_HAS_JULIA
     // start julia
     td_env_t *jl = td_env_julia(".",
                                 "/Applications/Julia-0.2.1.app/Contents/Resources/julia/bin");
@@ -50,18 +47,16 @@ int main(int argc, char *argv[])
 
     td_val_t out_java;
 
-    printf("got here 1 ");
     //td_env_t *java_env = td_env_java(".", "");
     td_env_t *java_env = get_java();
-    printf("got here 2 ");
 
-    java_env->invoke0(&out_java, "int");
+    java_env->invoke0(&out_java, "main");
     printf("int() = %d\n", td_int32(&out_java));
 
    // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
     td_val_t arg = { TD_INT32, 2 };
 
-    java_env->invoke1(&out_java, "int", &arg);
+    java_env->invoke1(&out_java, "sqr", &arg);
     printf("int(2) = %d\n", td_int32(&out_java));
 
    // printf("good morning!\n");

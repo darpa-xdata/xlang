@@ -7,6 +7,7 @@
 
 #include "td.h"
 
+JNIEnv *persistentJNI;
 // type mapping
 
 JNIEnv* create_vm(JavaVM ** jvm) {
@@ -14,7 +15,7 @@ JNIEnv* create_vm(JavaVM ** jvm) {
     JNIEnv *env;
     JavaVMInitArgs vm_args;
     JavaVMOption options;
-    options.optionString = "-Djava.class.path=."; //Path to the java source code
+    options.optionString = "-Djava.class.path=out"; //Path to the java source code
     vm_args.version = JNI_VERSION_1_6; //JDK version. This indicates version 1.6
     vm_args.nOptions = 1;
     vm_args.options = &options;
@@ -109,6 +110,28 @@ static java_value_t *from_td_val(td_val_t *v)
 
 void td_java_invoke0(td_val_t *out, char *fname)
 {
+	const char* mainClass = "xlang/java/Xlang";
+	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, mainClass);
+	if (clsH == NULL) {
+		printf("can't find Xlang class?\n");
+		return;
+
+	}
+	printf ("found Xlang class %s \n", mainClass);
+	jmethodID midMain = NULL;
+	midMain       = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "([Ljava/lang/String;)V");
+
+	if (midMain == NULL) {
+		printf("can't find Xlang method %s?\n",fname);
+		return;
+
+	}
+	printf ("found Xlang method %s\n",fname);
+
+	(*persistentJNI)->CallVoidMethod(persistentJNI, mainClass, midMain);
+
+	printf ("called Xlang method %s\n",fname);
+
    // java_function_t *f = java_get_function(java_base_module, fname);
    // java_value_t *v = java_call0(f);
   //  to_td_val(out, v);
@@ -116,7 +139,32 @@ void td_java_invoke0(td_val_t *out, char *fname)
 
 void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-   // java_function_t *f = java_get_function(java_base_module, fname);
+	const char* mainClass = "xlang/java/Xlang";
+	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, mainClass);
+	if (clsH == NULL) {
+		printf("can't find Xlang class?\n");
+		return;
+
+	}
+	//printf ("found Xlang class %s \n", mainClass);
+	jmethodID midMain = NULL;
+	// for now static int that takes an int and returns one
+	midMain       = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "(I)I");
+
+	if (midMain == NULL) {
+		printf("can't find Xlang method %s?\n",fname);
+		return;
+
+	}
+	printf ("found Xlang method %s\n",fname);
+
+    printf ("input %d\n",arg->int32_val);
+
+	jint val = (*persistentJNI)->CallStaticIntMethod(persistentJNI, mainClass, midMain,arg->int32_val);
+	   printf("In C, the int is %d\n", val);
+	printf ("called Xlang method %s\n",fname);
+    out->int32_val = val;
+	// java_function_t *f = java_get_function(java_base_module, fname);
    // java_value_t *v = java_call1(f, from_td_val(arg));
   //  to_td_val(out, v);
 }
@@ -169,68 +217,49 @@ size_t td_java_get_ndims(void *v)
 
 void td_java_init(char *home_dir)
 {
-  //  java_init(home_dir);
-
-	JNIEnv *jniEnv;
-	JavaVM * jvm;
-	jniEnv = create_vm(&jvm);
-	if (jniEnv == NULL)
-		return;
-	else {
-		printf("got here -- made java vm!\n");
-	}
-
-    td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
-    env->name = "java";
-
-    env->eval = &td_java_eval;
-    env->invoke0 = &td_java_invoke0;
-    env->invoke1 = &td_java_invoke1;
-    //env->invoke2
-    //env->invoke3
-
-    //env->retain
-    //env->release
-
-    env->get_type = &td_java_get_type;
-    env->get_eltype = &td_java_get_eltype;
-   // env->get_dataptr = &td_java_get_dataptr;
-    env->get_length = &td_java_get_length;
-    env->get_ndims = &td_java_get_ndims;
-
-    //env->get_dims
-    //env->get_strides
+    td_env_t *env = get_java();
 
     td_provide_java(env);
 }
 
 td_env_t *get_java() {
+
 	JNIEnv *jniEnv;
+
 	JavaVM * jvm;
-	jniEnv = create_vm(&jvm);
+
+	if (persistentJNI != NULL) {
+		jniEnv = persistentJNI;
+	}
+	else {
+		jniEnv = create_vm(&jvm);
+		persistentJNI = jniEnv;
+	}
 	if (jniEnv == NULL)
 		return NULL;
 	else {
-		printf("got here -- made java vm!\n");
+		printf(" made java vm!\n");
 	}
 
-    td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
-    env->name = "java";
+	td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
+	env->name = "java";
 
-    env->eval = &td_java_eval;
-    env->invoke0 = &td_java_invoke0;
-    env->invoke1 = &td_java_invoke1;
-    //env->invoke2
-    //env->invoke3
+	env->eval = &td_java_eval;
+	env->invoke0 = &td_java_invoke0;
+	env->invoke1 = &td_java_invoke1;
+	//env->invoke2
+	//env->invoke3
 
-    //env->retain
-    //env->release
+	//env->retain
+	//env->release
 
-    env->get_type = &td_java_get_type;
-    env->get_eltype = &td_java_get_eltype;
-   // env->get_dataptr = &td_java_get_dataptr;
-    env->get_length = &td_java_get_length;
-    env->get_ndims = &td_java_get_ndims;
+	env->get_type = &td_java_get_type;
+	env->get_eltype = &td_java_get_eltype;
+	// env->get_dataptr = &td_java_get_dataptr;
+	env->get_length = &td_java_get_length;
+	env->get_ndims = &td_java_get_ndims;
 
-    return env;
+	persistentJNI = jniEnv;
+	return env;
+
 }

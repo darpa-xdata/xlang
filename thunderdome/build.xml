@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." default="build" name="LangTest">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="../../../eclipse_juno"/>
+    <property name="imagewriter.location" value="imagewriter"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+
+    <tstamp>
+        <format property="current.time" pattern="MM/dd_HH"/>
+    </tstamp>
+
+    <path id="xlang.classpath">
+        <pathelement location="test-classes"/>
+    </path>
+
+    <target name="init" depends="clean">
+        <mkdir dir="out"/>
+    </target>
+
+    <target name="clean" >
+        <delete dir="test-classes"/>
+    </target>
+
+    <target depends="init" name="javac">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="out" includeantruntime="false" source="${source}" target="${target}">
+            <src path="java_src"/>
+            <classpath refid="xlang.classpath"/>
+        </javac>
+
+
+    </target>
+
+    <target depends="javac" name="build"/>
+
+</project>
