@@ -3,10 +3,11 @@
 
 #include "td.h"
 
+// this is the class that's called below... change it to use something else...
+#define MAIN_CLASS "xlang/java/Xlang"
+
 // for java, first argument can be a classpath
 int main(int argc, char *argv[])
-
-
 {
 #ifdef TD_HAS_JULIA
     // start julia
@@ -52,8 +53,7 @@ int main(int argc, char *argv[])
     if (argc == 2) {
     	classpath = argv[1];
     }
-    td_env_t *java_env = td_env_java(".",classpath,"xlang/java/Xlang");
-    //td_env_t *java_env = get_java(classpath,"xlang/java/Xlang");
+    td_env_t *java_env = td_env_java(".",classpath,MAIN_CLASS);
 
     // tests!
     java_env->invoke0(&out_java, "nextInt");
