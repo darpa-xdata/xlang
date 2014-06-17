@@ -650,7 +650,7 @@ size_t td_java_get_ndims(void *v)
 
 void td_java_init(const char *classpath, const char *javaClass)
 {
-    td_env_t *env = get_java(javaClass);
+    td_env_t *env = get_java(classpath, javaClass);
     td_provide_java(env);
 }
 
@@ -661,19 +661,16 @@ void td_java_init(const char *classpath, const char *javaClass)
 */
 td_env_t *get_java(const char *classpath, const char *javaClass) {
 
+
 	JNIEnv *jniEnv;
 	JavaVM * jvm;
 
-/*
-	if (persistentJNI != NULL) {
-		jniEnv = persistentJNI;
-	}
-	else {
-*/
-		jniEnv = create_vm(&jvm, classpath);
-		persistentJNI = jniEnv;
-		persistentClass = javaClass;
-	//}
+	printf("called get java with %s and %s\n",classpath,javaClass);
+
+	jniEnv = create_vm(&jvm, classpath);
+	persistentJNI = jniEnv;
+	persistentClass = javaClass;
+
 	if (jniEnv == NULL) {
 		printf("ERROR : couldn't make the java vm!\n");
 		return NULL;

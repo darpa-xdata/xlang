@@ -217,9 +217,9 @@ void td_provide_r(td_env_t *e);     // called by julia main if it runs
 td_env_t *td_env_python(char *, char*);  // to get the julia env
 void td_provide_python(td_env_t *e);     // called by julia main if it runs
 
-td_env_t *td_env_java(char *, char*);  // to get the java env
+td_env_t *td_env_java(char *, char*, char*);  // to get the java env
 void td_provide_java(td_env_t *e);     // called by java main if it runs
-td_env_t *get_java();  // to get the java env
+td_env_t *get_java(const char *classpath, const char *javaClass);  // to get the java env
 
 
 #endif

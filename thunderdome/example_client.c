@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
     if (argc == 2) {
     	classpath = argv[1];
     }
-    //td_env_t *java_env = td_env_java(".", "");
-    td_env_t *java_env = get_java(classpath,"xlang/java/Xlang");
+    td_env_t *java_env = td_env_java(".",classpath,"xlang/java/Xlang");
+    //td_env_t *java_env = get_java(classpath,"xlang/java/Xlang");
 
     // tests!
     java_env->invoke0(&out_java, "nextInt");

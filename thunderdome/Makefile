@@ -27,7 +27,7 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
-CC = gcc 
+CC = gcc
 
 default: all
 
@@ -52,9 +52,17 @@ libtd_java_windows.so: td.h td_java.c libtd.so
 #	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include
 	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/bin/server/jvm.dll ./libtd.so
 
+# mac
+libtd_java.so: td.h td_java.c libtd.so
+	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/darwin
+	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/server/libjvm.dylib ./libtd.so
+	
 example_client: example_client.c td.h libtd_julia.so libtd_python.so
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./libtd.so
 
+example_client_java: example_client.c td.h libtd_java.so
+	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 $< -o $@ ./libtd.so
+	
 #example_java_client_windows: example_client.c td.h libtd_java.so 
 #	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 $< -o $@ ./libtd.so ./libtd_java.so "$(JAVA_HOME)"/jre/bin/server/jvm.dll
 
