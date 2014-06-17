@@ -1,0 +1,53 @@
+{
+  "width": 250,
+  "height": 250,
+  "data": [
+    {
+      "name": "nodes"
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "range": "width",
+      "round": false,
+      "domain": [0,6550]
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category10",
+      "domain": ["com", "de", "net", "org", "uk", "nl", "ru", "info", "it", "pl", "br", "au", "jp", "fr", "edu", "gov", "other"]
+    }
+  ],
+  "marks": [
+    {
+      "type": "symbol",
+      "from": {"data": "nodes"},
+      "properties": {
+        "enter": {
+          "shape": {"value": "square"},
+          "x": {"scale": "x", "field": "data.col"},
+          "y": {"scale": "x", "field": "data.row"},
+          "size": {"value": 25},
+          "fill": {"scale": "color", "field": "data.tld"},
+          "opacity": {"value": 0.01}
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "from": {"data": "nodes"},
+      "properties": {
+        "enter": {
+          "shape": {"value": "circle"},
+          "x": {"scale": "x", "field": "data.col"},
+          "y": {"scale": "x", "field": "data.row"},
+          "size": {"value": 9},
+          "fill": {"scale": "color", "field": "data.tld"}
+        }
+      }
+    }
+  ]
+}
