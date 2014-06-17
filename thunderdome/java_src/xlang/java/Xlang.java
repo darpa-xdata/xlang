@@ -27,8 +27,10 @@ public class Xlang {
   }
 
   public static double sin(double deg) {
-    System.out.println("sin of " + deg);
-    return Math.sin(deg);
+    double sin = Math.sin(deg);
+    //new Exception().printStackTrace();
+    //System.out.println("Xlang : sin of " + deg +  " = " + sin);
+    return sin;
   }
 
   public static int mult(int n, int m) {
@@ -37,7 +39,7 @@ public class Xlang {
   public static int strLen(String n) {
     return n.length();
   }
-  public static int random() {
+  public static int nextInt() {
     return random.nextInt();
   }
 

@@ -46,29 +46,35 @@ int main(int argc, char *argv[])
     td_val_t out_java;
 
     //td_env_t *java_env = td_env_java(".", "");
-    td_env_t *java_env = get_java();
+    td_env_t *java_env = get_java("xlang/java/Xlang");
 
-    java_env->invoke0(&out_java, "random");
-    printf("int() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
+    // tests!
+    java_env->invoke0(&out_java, "nextInt");
+    printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
     java_env->invoke0(&out_java, "nextBool");
-    printf("bool() = %d\n", td_int32(&out_java));
+    printf("nextBool() = %d\n", td_int32(&out_java));
 
     java_env->invoke0(&out_java, "nextDouble");
-    printf("double() = %f\n", td_double(&out_java));
+    printf("nextDouble() = %f\n", td_double(&out_java));
 
-
+    // bad method name
     java_env->invoke0(&out_java, "unknownMethod");
-    printf("void() = %f\n", td_double(&out_java));
+    printf("unknownMethod() = %f\n", td_double(&out_java));
    // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
 
-    td_val_t arg = { TD_INT32, 2 };
+    td_val_t arg = { TD_INT32, 4 };
     java_env->invoke1(&out_java, "sqr", &arg);
     printf("sqr(2) = %d\n", td_int32(&out_java));
 
-     arg.tag = TD_DOUBLE; arg.double_val = 3.14/2;
+    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
     java_env->invoke1(&out_java, "sin", &arg);
-    printf("sin(2) = %f\n", td_double(&out_java));
+    printf("sin(%f) = %f\n", arg.double_val, td_double(&out_java));
+
+    // another error case - no sqr that takes a double
+    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sqr", &arg);
+    printf("sqr(%f) = %f\n", arg.double_val, td_double(&out_java));
 
     return 0;
 }
