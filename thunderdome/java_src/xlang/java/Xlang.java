@@ -33,6 +33,8 @@ public class Xlang {
     return sin;
   }
 
+  public static boolean isEven(int n) { return n % 2==0;}
+
   public static int mult(int n, int m) {
     return n * m;
   }

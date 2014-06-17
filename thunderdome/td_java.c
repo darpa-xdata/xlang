@@ -12,12 +12,15 @@ const char *persistentClass;
 int debug = 0;
 // type mapping
 
-JNIEnv* create_vm(JavaVM ** jvm) {
+JNIEnv* create_vm(JavaVM ** jvm, const char *classpath) {
 
     JNIEnv *env;
     JavaVMInitArgs vm_args;
     JavaVMOption options;
-    options.optionString = "-Djava.class.path=out"; //Path to the java source code
+    char buf[1024];
+    sprintf(buf,"-Djava.class.path=%s",classpath);
+   //  char *bptr = &buf;
+    options.optionString = &buf; //Path to the java source code
     vm_args.version = JNI_VERSION_1_6; //JDK version. This indicates version 1.6
     vm_args.nOptions = 1;
     vm_args.options = &options;
@@ -29,87 +32,7 @@ JNIEnv* create_vm(JavaVM ** jvm) {
 	return env;
 }
 
-
-/*static td_tag_t java_type_to_td(java_value_t *t)
-{
-    if (t == (java_value_t*)java_int8_type) return TD_INT8;
-    if (t == (java_value_t*)java_uint8_type) return TD_UINT8;
-    if (t == (java_value_t*)java_int16_type) return TD_INT16;
-    if (t == (java_value_t*)java_uint16_type) return TD_UINT16;
-    if (t == (java_value_t*)java_int32_type) return TD_INT32;
-    if (t == (java_value_t*)java_uint32_type) return TD_UINT32;
-    if (t == (java_value_t*)java_int64_type) return TD_INT64;
-    if (t == (java_value_t*)java_uint64_type) return TD_UINT64;
-    if (t == (java_value_t*)java_float32_type) return TD_FLOAT;
-    if (t == (java_value_t*)java_float64_type) return TD_DOUBLE;
-    if (java_is_array_type(t)) return TD_ARRAY;
-    if (t == (java_value_t*)java_ascii_string_type ||
-        t == (java_value_t*)java_utf8_string_type)
-        return TD_UTF8;
-    return TD_OBJECT;
-}
-
-static java_value_t *td_type_to_java(td_tag_t tag)
-{
-    switch (tag) {
-    case TD_INT8: return (java_value_t*)java_int8_type;
-    case TD_UINT8: return (java_value_t*)java_uint8_type;
-    case TD_INT16: return (java_value_t*)java_int16_type;
-    case TD_UINT16: return (java_value_t*)java_uint16_type;
-    case TD_INT32: return (java_value_t*)java_int32_type;
-    case TD_UINT32: return (java_value_t*)java_uint32_type;
-    case TD_INT64: return (java_value_t*)java_int64_type;
-    case TD_UINT64: return (java_value_t*)java_uint64_type;
-    case TD_FLOAT: return (java_value_t*)java_float32_type;
-    case TD_DOUBLE: return (java_value_t*)java_float64_type;
-    case TD_UTF8: return (java_value_t*)java_utf8_string_type;
-    default:
-        return (java_value_t*)java_nothing->type;
-    }
-}
-
-// value mapping
-
-static void to_td_val(td_val_t *out, java_value_t *v)
-{
-    td_tag_t tag = java_type_to_td(java_typeof(v));
-    if (tag < TD_UTF8) {
-        out->tag = tag;
-        memcpy(&out->object, java_data_ptr(v), td_type_size(tag));
-    }
-    else {
-        out->owner = td_env_julia(NULL, NULL);
-        out->object = v;
-    }
-}
-
-static java_value_t *from_td_val(td_val_t *v)
-{
-    td_tag_t tag = td_typeof(v);
-    switch (tag) {
-    case TD_INT8: return java_box_int8(td_int8(v));
-    case TD_UINT8: return java_box_uint8(td_uint8(v));
-    case TD_INT16: return java_box_int16(td_int16(v));
-    case TD_UINT16: return java_box_uint16(td_uint16(v));
-    case TD_INT32: return java_box_int32(td_int32(v));
-    case TD_UINT32: return java_box_uint32(td_uint32(v));
-    case TD_INT64: return java_box_int64(td_int64(v));
-    case TD_UINT64: return java_box_uint64(td_uint64(v));
-    case TD_FLOAT: return java_box_float32(td_float(v));
-    case TD_DOUBLE: return java_box_float64(td_double(v));
-    case TD_UTF8:
-        return java_pchar_to_string(td_dataptr(v), td_length(v));
-    case TD_ARRAY:
-        return (java_value_t*)
-            java_ptr_to_array_1d((java_value_t*)java_apply_array_type((java_datatype_t*)td_type_to_java(td_eltype(v)), 1),
-                               td_dataptr(v), td_length(v), 0);
-    default:
-        return java_nothing;
-    }
-}*/
-
 // entry points
-
 
 char setReturnTdVal(const char* ret) {
 	if (strcmp(ret, "boolean") == 0) {
@@ -228,11 +151,9 @@ void setValueFromType(td_val_t *arg, jvalue * val) {
  */
 void td_java_invoke0(td_val_t *out, char *fname)
 {
-	//const char* persistentClass = "xlang/java/Xlang";
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
 	if (clsH == NULL) {
 		printf("can't find Xlang class?\n");
-		// new Exception();
 		return;
 	}
 
@@ -379,13 +300,110 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	// 5) Finally lets call the method with the right type, depending on the argument type and grap the return value
 
 	if (strcmp(returnString, "boolean") == 0) {
-		out->int32_val = (*persistentJNI)->CallStaticBooleanMethod(persistentJNI, clsH, methodToCall,val);
+		//out->int32_val = (*persistentJNI)->CallStaticBooleanMethod(persistentJNI, clsH, methodToCall,val);
+		// if there's a better way than copying all this code I'd love to know -- macro?
+		switch (td_typeof(arg)) {
+			case TD_INT8:
+				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_UINT8:
+				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_INT16:
+				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_UINT16:
+				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_INT32:
+				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_UINT32:
+				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_INT64:
+				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_UINT64:
+				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_FLOAT:
+				out->int32_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+				break;
+			case TD_DOUBLE:
+				out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+				break;
+			}
+
 		out->tag = TD_INT32;
 	} else if (strcmp(returnString, "byte") == 0) {
-		out->int8_val = (*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val);
+
+		switch (td_typeof(arg)) {
+			case TD_INT8:
+				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_UINT8:
+				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_INT16:
+				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_UINT16:
+				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_INT32:
+				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_UINT32:
+				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_INT64:
+				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_UINT64:
+				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_FLOAT:
+				out->int32_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+				break;
+			case TD_DOUBLE:
+				out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+				break;
+			}
 		out->tag = TD_INT8;
 	} else if (strcmp(returnString, "char") == 0) {
-		out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val);
+		switch (td_typeof(arg)) {
+				case TD_INT8:
+					out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+					break;
+				case TD_UINT8:
+					out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+					break;
+				case TD_INT16:
+					out->int8_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+					break;
+				case TD_UINT16:
+					out->int8_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+					break;
+				case TD_INT32:
+					out->int8_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+					break;
+				case TD_UINT32:
+					out->int8_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+					break;
+				case TD_INT64:
+					out->int8_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+					break;
+				case TD_UINT64:
+					out->int8_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+					break;
+				case TD_FLOAT:
+					out->int8_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+					break;
+				case TD_DOUBLE:
+					out->int8_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+					break;
+				}
 		out->tag = TD_INT8;
 	} else if (strcmp(returnString, "double") == 0) {
 		//printf("orig %f\n",arg->double_val);
@@ -426,7 +444,38 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 
 		out->tag = TD_DOUBLE;
 	} else if (strcmp(returnString, "float") == 0) {
-		out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val);
+		switch (td_typeof(arg)) {
+			case TD_INT8:
+				out->float_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_UINT8:
+				out->float_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_INT16:
+				out->float_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_UINT16:
+				out->float_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_INT32:
+				out->float_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_UINT32:
+				out->float_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_INT64:
+				out->float_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_UINT64:
+				out->float_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_FLOAT:
+				out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+				break;
+			case TD_DOUBLE:
+				out->float_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+				break;
+			}
 		out->tag = TD_FLOAT;
 	} else if (strcmp(returnString, "int") == 0) {
 		//printf("orig %d\n",arg->int32_val);
@@ -468,15 +517,76 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 
 		out->tag = TD_INT32;
 	} else if (strcmp(returnString, "long") == 0) {
-		out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val);
-		out->tag = TD_UINT64;
+		switch (td_typeof(arg)) {
+			case TD_INT8:
+				out->int64_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_UINT8:
+				out->int64_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_INT16:
+				out->int64_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_UINT16:
+				out->int64_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_INT32:
+				out->int64_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_UINT32:
+				out->int64_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_INT64:
+				out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_UINT64:
+				out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_FLOAT:
+				out->int64_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+				break;
+			case TD_DOUBLE:
+				out->int64_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+				break;
+			}
+		out->tag = TD_INT64;
 	} else if (strcmp(returnString, "object") == 0) {
 		out->object =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val);
 		out->tag = TD_OBJECT;
 	} else if (strcmp(returnString, "short") == 0) {
-		out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val);
-		out->tag = TD_INT16;
-	} else if (strcmp(returnString, "void") == 0) {
+		switch (td_typeof(arg)) {
+			case TD_INT8:
+				out->int16_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_UINT8:
+				out->int16_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+				break;
+			case TD_INT16:
+				out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_UINT16:
+				out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+				break;
+			case TD_INT32:
+				out->int16_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_UINT32:
+				out->int16_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+				break;
+			case TD_INT64:
+				out->int16_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_UINT64:
+				out->int16_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+				break;
+			case TD_FLOAT:
+				out->int16_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+				break;
+			case TD_DOUBLE:
+				out->int16_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+				break;
+			}		out->tag = TD_INT16;
+	} else if (strcmp(returnString, "void") == 0) { // TODO: no good mapping for a void function
 		(*persistentJNI)->CallStaticVoidMethod(persistentJNI, clsH, methodToCall,val);
 		out->tag = TD_UNKNOWN;
 	} else if (strcmp(returnString, "array") == 0) {
@@ -538,7 +648,7 @@ size_t td_java_get_ndims(void *v)
 
 // initialization
 
-void td_java_init(char *javaClass)
+void td_java_init(const char *classpath, const char *javaClass)
 {
     td_env_t *env = get_java(javaClass);
     td_provide_java(env);
@@ -549,7 +659,7 @@ void td_java_init(char *javaClass)
 \param javaClass class with static methods you would like to call
 \return the callable
 */
-td_env_t *get_java(const char *javaClass) {
+td_env_t *get_java(const char *classpath, const char *javaClass) {
 
 	JNIEnv *jniEnv;
 	JavaVM * jvm;
@@ -560,7 +670,7 @@ td_env_t *get_java(const char *javaClass) {
 	}
 	else {
 */
-		jniEnv = create_vm(&jvm);
+		jniEnv = create_vm(&jvm, classpath);
 		persistentJNI = jniEnv;
 		persistentClass = javaClass;
 	//}
