@@ -23,8 +23,12 @@ import java.util.Random;
 public class Xlang {
   static Random random = new Random();
   public static int sqr(int n) {
-    System.out.println("arg " + n);
     return n * n;
+  }
+
+  public static double sin(double deg) {
+    System.out.println("sin of " + deg);
+    return Math.sin(deg);
   }
 
   public static int mult(int n, int m) {

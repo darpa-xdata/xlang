@@ -206,6 +206,7 @@ void td_java_invoke0(td_val_t *out, char *fname)
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, mainClass);
 	if (clsH == NULL) {
 		printf("can't find Xlang class?\n");
+		// new Exception();
 		return;
 	}
 
@@ -327,7 +328,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		return;
 	}
 
-	jvalue real;
+	//jvalue real;
     jvalue val;// = &real;
 	setValueFromType(arg, &val);
 
@@ -342,6 +343,8 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, midMain,val);
 		out->tag = TD_INT8;
 	} else if (strcmp(returnString, "double") == 0) {
+		printf("orig %f\n",arg->double_val);
+		printf("calling double with %f\n",val.d);
 		out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, midMain,val);
 		out->tag = TD_DOUBLE;
 	} else if (strcmp(returnString, "float") == 0) {

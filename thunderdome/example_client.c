@@ -61,10 +61,14 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "unknownMethod");
     printf("void() = %f\n", td_double(&out_java));
    // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
-    td_val_t arg = { TD_INT32, 2 };
 
+    td_val_t arg = { TD_INT32, 2 };
     java_env->invoke1(&out_java, "sqr", &arg);
-    printf("int(2) = %d\n", td_int32(&out_java));
+    printf("sqr(2) = %d\n", td_int32(&out_java));
+
+     arg.tag = TD_DOUBLE; arg.double_val = 3.14/2;
+    java_env->invoke1(&out_java, "sin", &arg);
+    printf("sin(2) = %f\n", td_double(&out_java));
 
     return 0;
 }
