@@ -10,6 +10,20 @@ PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
 
 JAVA_PATH = $JAVA_HOME/lib
 
+ARCH="win32"
+LIBTYPE="dll"
+UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        ARCH=linux
+        LIBTYPE=so
+        SERVER_DIR=amd64/server
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        ARCH=darwin
+        LIBTYPE=dylib
+        SERVER_DIR=server
+    endif
+
 DEBUG = -g
 
 # R parameters.
@@ -54,15 +68,15 @@ libtd_java_windows.so: td.h td_java.c libtd.so
 
 # mac
 libtd_java.so: td.h td_java.c libtd.so
-	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/darwin
-	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/server/libjvm.dylib ./libtd.so
-	
+	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/$(ARCH)
+	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/$(SERVER_DIR)/libjvm.$(LIBTYPE) ./libtd.so
+
 example_client: example_client.c td.h libtd_julia.so libtd_python.so
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./libtd.so
 
 example_client_java: example_client.c td.h libtd_java.so
 	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 $< -o $@ ./libtd.so
-	
+
 #example_java_client_windows: example_client.c td.h libtd_java.so 
 #	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 $< -o $@ ./libtd.so ./libtd_java.so "$(JAVA_HOME)"/jre/bin/server/jvm.dll
 
@@ -81,7 +95,7 @@ mac: td.h td_ds.h td.c td_ds.c example_client.c td_java.c
 # and set LD_LIBRARY_PATH to ${JAVA_HOME}/jre/lib/amd64/server
 # you may have to do a find for libjvm with a different java installation
 linux: td.h td_ds.h td.c td_ds.c example_client.c td_java.c
-	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 -ljvm -L$(JAVA_HOME)/jre/lib/amd64/server  td.c td_ds.c example_client.c td_java.c -o linux -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/darwin "${JAVA_HOME}"/jre/lib/amd64/server/libjvm.so 
+	$(CC) $(DEBUG) -DTD_HAS_JAVA=1 -ljvm -L$(JAVA_HOME)/jre/lib/amd64/server  td.c td_ds.c example_client.c td_java.c -o linux -I"$(JAVA_HOME)"/include "${JAVA_HOME}"/jre/lib/amd64/server/libjvm.so 
 
 ds_roundtrip: ds_roundtrip.c td.h
 
