@@ -59,7 +59,7 @@ public class Xlang {
   public static int howMany(List<String> strs) {
     return strs.size();
   }
-  public static List<String> toUpper(List<String> strs) {
+  public static List<String> toUpperList(List<String> strs) {
     List<String>ret = new ArrayList<String>();
     for (String s:strs) ret.add(s.toUpperCase());
     return ret;
@@ -122,6 +122,10 @@ public class Xlang {
       if (method.equalsIgnoreCase(m.getName())) {
 
         String s = m.getGenericReturnType().toString();
+         if (s.startsWith("class ")) {
+           s = s.substring("class ".length());
+           s = s.replaceAll("\\.","\\/");
+         }
 
         return s;
 

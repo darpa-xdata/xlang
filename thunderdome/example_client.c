@@ -66,6 +66,12 @@ int main(int argc, char *argv[])
     java_env->invoke1(&out_java, "strLen", &arg);
     printf("strLen(%s) = %d\n", (char *)((td_string_t *)arg.object)->data, td_int32(&out_java));
 
+    arg.tag = TD_UTF8; arg.object = &str;
+    java_env->invoke1(&out_java, "toUpper", &arg);
+    printf("got here!\n");
+    printf("toUpper(%s)\n", (char *)((td_string_t *)arg.object)->data);//(char *)td_pointer(&arg));
+    printf("toUpper = %s\n", (char *)((td_string_t *)out_java.object)->data);//(char *)td_pointer(&out_java));
+
     if (1) return 0;
 
     java_env->invoke0(&out_java, "nextInt");

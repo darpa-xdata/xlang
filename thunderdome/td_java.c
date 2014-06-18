@@ -57,8 +57,9 @@ char setReturnTdVal(const char* ret) {
 		return 'V';
 	else if (strcmp(ret, "array") == 0)
 		return '[';
-	else
+	else {
 		return '?';
+	}
 }
 
 /**
@@ -89,7 +90,7 @@ char getArgFromType(td_val_t *arg) {
 	case TD_FLOAT : return 'F';
 	case TD_DOUBLE : return 'D';
 	case TD_OBJECT : return 'L';
-	//case TD_UTF8 : return '[Ljava/lang/String;';
+	//case TD_UTF8 : return 'Ljava/lang/String;';
 	}
 }
 
@@ -175,7 +176,12 @@ void td_java_invoke0(td_val_t *out, char *fname)
 
     char buf[512];
     char rc = setReturnTdVal(returnString);
-    sprintf(buf,"()%c",rc);
+    if (rc == '?') {
+    	sprintf(buf,"()L%s",returnString);
+    }
+    else {
+    	sprintf(buf,"()%c",rc);
+    }
   	//printf("signature is %s\n",buf);
 
 	jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, buf);
@@ -235,10 +241,45 @@ void getSignature(const char* returnString, char buf[512], td_val_t* arg) {
 	char rc = setReturnTdVal(returnString);
 	char argC = getArgFromType(arg);
 	if (td_typeof(arg) == TD_UTF8) {
-		sprintf(buf, "(Ljava/lang/String;)%c", rc);
+		   if (rc == '?') {
+		    	//sprintf(buf,"()L%s",returnString);
+				sprintf(buf, "(Ljava/lang/String;)L%s;", returnString);
+
+		    }
+		    else {
+		    	//sprintf(buf,"()%c",rc);
+				sprintf(buf, "(Ljava/lang/String;)%c", rc);
+		    }
+
 	} else {
 		sprintf(buf, "(%c)%c", argC, rc);
 	}
+}
+
+// OK make the return value and the string on the stack
+// copy the value from jvm side to the C side and discard the java string
+void getString(jstring returnValue, JNIEnv* persistentJNI, td_val_t* out) {
+	td_string_t *str = (td_string_t*)malloc(sizeof(td_string_t));
+	//str.length = 7;
+	//str.data = "Bueller";
+	const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI, returnValue, 0);
+	//printf("got here - %d\n", strlen(returnString));
+
+	str->length = strlen(returnString);
+
+	str->data = malloc(sizeof(char)*str->length+1); // add space for trailing 0
+	//printf("got here - %s\n", returnString);
+	strcpy((char *)str->data, returnString);
+//	printf("0 got here - %s\n", (char *)str->data);
+
+	out->ptr_val = str;
+	out->tag = TD_UTF8;
+//	printf("1 got here - %s\n", (char *)str->data);
+	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI, returnValue,	returnString);
+//	printf("2 got here - %s\n", (char *)str->data);
+	(*persistentJNI)->DeleteLocalRef(persistentJNI, returnValue); // not sure if this is required
+	printf("3 got here - %s\n", (char *)str->data);
+
 }
 
 //! call a static java function with one parameter -- determine the method signature from the arguments here
@@ -301,179 +342,154 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		//out->int32_val = (*persistentJNI)->CallStaticBooleanMethod(persistentJNI, clsH, methodToCall,val);
 		// if there's a better way than copying all this code I'd love to know -- macro?
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->int32_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}
+		case TD_INT8:
+		case TD_UINT8:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 
 		out->tag = TD_INT32;
 	} else if (strcmp(returnString, "byte") == 0) {
 
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->int32_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}
+		case TD_INT8:
+		case TD_UINT8:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 		out->tag = TD_INT8;
 	} else if (strcmp(returnString, "char") == 0) {
 		switch (td_typeof(arg)) {
-				case TD_INT8:
-					out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-					break;
-				case TD_UINT8:
-					out->int8_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-					break;
-				case TD_INT16:
-					out->int8_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-					break;
-				case TD_UINT16:
-					out->int8_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-					break;
-				case TD_INT32:
-					out->int8_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-					break;
-				case TD_UINT32:
-					out->int8_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-					break;
-				case TD_INT64:
-					out->int8_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-					break;
-				case TD_UINT64:
-					out->int8_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-					break;
-				case TD_FLOAT:
-					out->int8_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-					break;
-				case TD_DOUBLE:
-					out->int8_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-					break;
-				}
+		case TD_INT8:
+		case TD_UINT8:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int8_val =(*persistentJNI)->CallStaticCharMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 		out->tag = TD_INT8;
 	} else if (strcmp(returnString, "double") == 0) {
 		//printf("orig %f\n",arg->double_val);
 		//printf("calling double with %f arg type %d\n",val.d, td_typeof(arg));
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->double_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->double_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->double_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->double_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->double_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->double_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->double_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->double_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->double_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}
+		case TD_INT8:
+		case TD_UINT8:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->double_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 		//printf("called double with %f got %f\n",val.d, out->double_val);
 
 		out->tag = TD_DOUBLE;
 	} else if (strcmp(returnString, "float") == 0) {
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->float_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->float_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->float_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->float_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->float_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->float_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->float_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->float_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->float_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}
+		case TD_INT8:
+		case TD_UINT8:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->float_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 		out->tag = TD_FLOAT;
 	} else if (strcmp(returnString, "int") == 0) {
 		//printf("orig %d\n",arg->int32_val);
@@ -481,118 +497,143 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		//out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val);
 
 		switch (td_typeof(arg)) {
-				case TD_INT8:
-					out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-					break;
-				case TD_UINT8:
-					out->int32_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-					break;
-				case TD_INT16:
-					out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-					break;
-				case TD_UINT16:
-					out->int32_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-					break;
-				case TD_INT32:
-					out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-					break;
-				case TD_UINT32:
-					out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-					break;
-				case TD_INT64:
-					out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-					break;
-				case TD_UINT64:
-					out->int32_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-					break;
-				case TD_FLOAT:
-					out->int32_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-					break;
-				case TD_DOUBLE:
-					out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-					break;
-				case TD_UTF8:
-					out->int32_val =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.l);
-					break;
-				}
+		case TD_INT8:
+		case TD_UINT8:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 
 		out->tag = TD_INT32;
 	} else if (strcmp(returnString, "long") == 0) {
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->int64_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->int64_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->int64_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->int64_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->int64_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->int64_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->int64_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->int64_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}
+		case TD_INT8:
+		case TD_UINT8:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int64_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
 		out->tag = TD_INT64;
 	} else if (strcmp(returnString, "object") == 0) {
 		out->object =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val);
 		out->tag = TD_OBJECT;
 	} else if (strcmp(returnString, "short") == 0) {
 		switch (td_typeof(arg)) {
-			case TD_INT8:
-				out->int16_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_UINT8:
-				out->int16_val =(*persistentJNI)->CallStaticByteMethod(persistentJNI, clsH, methodToCall,val.b);
-				break;
-			case TD_INT16:
-				out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_UINT16:
-				out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
-				break;
-			case TD_INT32:
-				out->int16_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_UINT32:
-				out->int16_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.i);
-				break;
-			case TD_INT64:
-				out->int16_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_UINT64:
-				out->int16_val =(*persistentJNI)->CallStaticLongMethod(persistentJNI, clsH, methodToCall,val.j);
-				break;
-			case TD_FLOAT:
-				out->int16_val =(*persistentJNI)->CallStaticFloatMethod(persistentJNI, clsH, methodToCall,val.f);
-				break;
-			case TD_DOUBLE:
-				out->int16_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
-				break;
-			}		out->tag = TD_INT16;
+		case TD_INT8:
+		case TD_UINT8:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.b);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.s);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.i);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.j);
+			break;
+		case TD_FLOAT:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.f);
+			break;
+		case TD_DOUBLE:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.d);
+			break;
+		case TD_UTF8:
+			out->int16_val =(*persistentJNI)->CallStaticShortMethod(persistentJNI, clsH, methodToCall,val.l);
+			break;
+		}
+		out->tag = TD_INT16;
 	} else if (strcmp(returnString, "void") == 0) { // TODO: no good mapping for a void function
 		(*persistentJNI)->CallStaticVoidMethod(persistentJNI, clsH, methodToCall,val);
 		out->tag = TD_UNKNOWN;
 	} else if (strcmp(returnString, "array") == 0) {
 		out->ptr_val =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val);
 		out->tag = TD_ARRAY;
+	} else if (strcmp(returnString, "java/lang/String") == 0) {
+		//out->ptr_val =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val);
+		jstring returnValue;
+		out->tag = TD_UNKNOWN;
+		//printf("got here - %s\n", returnString);
+		switch (td_typeof(arg)) {
+		case TD_INT8:
+		case TD_UINT8:
+			returnValue = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.b);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_INT16:
+		case TD_UINT16:
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.s);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_INT32:
+		case TD_UINT32:
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.i);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_INT64:
+		case TD_UINT64:
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.j);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_FLOAT:
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.f);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_DOUBLE:
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.d);
+			getString(returnValue, persistentJNI, out);
+			break;
+		case TD_UTF8:
+			//printf("got here - %s\n", returnString);
+
+			returnValue =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.l);
+			getString(returnValue, persistentJNI, out);
+			break;
+		}
+
 	} else {
 		printf("error: unknown return value %s\n",returnString);
 	}
@@ -600,7 +641,6 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	// free the return string we got from asking for the return type
 	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI,returnTypeMethod, returnString);
 	(*persistentJNI)->DeleteLocalRef(persistentJNI,returnTypeMethod);
-
 }
 
 void td_java_eval(td_val_t *out, char *str)
