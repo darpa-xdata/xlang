@@ -59,6 +59,9 @@ public class Xlang {
   public static int howMany(List<String> strs) {
     return strs.size();
   }
+  public static int howManyArr(String [] strs) {
+    return strs.length;
+  }
   public static List<String> toUpperList(List<String> strs) {
     List<String>ret = new ArrayList<String>();
     for (String s:strs) ret.add(s.toUpperCase());
@@ -68,6 +71,17 @@ public class Xlang {
   public static int sum(List<Integer> nums) {
     int total = 0;
     for (Integer s:nums) total+=s;
+    return total;
+  }
+
+  public static int sumArr(int [] nums) {
+    int total = 0;
+    System.out.println("sumArr got len " +nums.length);
+
+    for (int s:nums) {
+      System.out.println("got " +s);
+      total+=s;
+    }
     return total;
   }
 

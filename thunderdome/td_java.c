@@ -90,10 +90,44 @@ char getArgFromType(td_val_t *arg) {
 	case TD_FLOAT : return 'F';
 	case TD_DOUBLE : return 'D';
 	case TD_OBJECT : return 'L';
+	case TD_ARRAY : return '[';
 	//case TD_UTF8 : return 'Ljava/lang/String;';
 	}
 }
 
+jintArray makeIntArray( int length, int * values) {
+	JNIEnv *env = persistentJNI;
+	//const char * className= "java/lang/Integer";
+	// Get a class reference for java.lang.Double
+	//jclass classDouble = (*env)->FindClass(env, className);
+
+	// Allocate a jobjectArray of 2 java.lang.Double
+	jintArray outJNIArray = (*env)->NewIntArray(env, length);
+	//jint nums[length];
+	jsize size = 0;
+	printf("length %d\n",length);
+
+	int i = 0;
+	for (; i < length; i++) {
+		printf("val %d\n",values[i]);
+	}
+
+	//jint outCArray[] = {4, 5};
+	   (*env)->SetIntArrayRegion(env, outJNIArray, size, length, values);  // copy
+	// Construct 2 Double objects by calling the constructor
+//	jmethodID midDoubleInit = (*env)->GetMethodID(env, classDouble, "<init>", "(I)V");
+//	if (NULL == midDoubleInit) {
+//		printf("ERROR : can't find ctor for Integer???");
+//	}
+	//for (int i =0; i< length; i++) {
+	//	jobject obj = (*env)->NewObject(env, classDouble, midDoubleInit, values[i]);
+	//	(*env)->SetObjectArrayElement(env, outJNIArray, i, obj);
+	//}
+	return outJNIArray;
+}
+
+
+// TODO: if TD_UTF8 - release the string we pass in...
 void setValueFromType(td_val_t *arg, jvalue * val) {
 	switch (td_typeof(arg)) {
 	case TD_INT8:
@@ -129,11 +163,27 @@ void setValueFromType(td_val_t *arg, jvalue * val) {
 	case TD_OBJECT:
 		val->l = arg->object;
 		break;
+	case TD_ARRAY:
+		val->l = arg->object;
+
+		td_array_t* arr = (td_array_t *) arg->object;
+		//char * argType= "Ljava/lang/Integer;";
+		switch(arr->eltype) {
+		case TD_INT32:
+			printf("got here --\n");
+			val->l = makeIntArray(arr->length,(int*)arr->data);
+			break;
+			// TODO : fill in all the rest
+		}
+
+		break;
 	case TD_UTF8:
 		val->l = (*persistentJNI)->NewStringUTF(persistentJNI,(char *)((td_string_t *)arg->object)->data);
 		break;
 	}
 }
+
+
 /**
  * boolean      Z
  byte         B
@@ -242,17 +292,36 @@ void getSignature(const char* returnString, char buf[512], td_val_t* arg) {
 	char argC = getArgFromType(arg);
 	if (td_typeof(arg) == TD_UTF8) {
 		   if (rc == '?') {
-		    	//sprintf(buf,"()L%s",returnString);
 				sprintf(buf, "(Ljava/lang/String;)L%s;", returnString);
-
 		    }
 		    else {
-		    	//sprintf(buf,"()%c",rc);
 				sprintf(buf, "(Ljava/lang/String;)%c", rc);
 		    }
 
 	} else {
-		sprintf(buf, "(%c)%c", argC, rc);
+		if (argC == '[') {
+
+			td_array_t* arr = (td_array_t *) arg->object;
+			char * argType= "Ljava/lang/Integer;";
+			switch(arr->eltype) {
+			case TD_INT32:
+				argType = "I";//Ljava/lang/Integer;";
+				break;
+				// TODO : fill in all the rest
+			}
+			sprintf(buf, "([%s)%c", argType, rc);
+
+			if (rc == '?') {
+				sprintf(buf, "([%s)L%s;", argType, returnString);
+			}
+			else {
+				sprintf(buf, "([%s)%c", argType, rc);
+
+			}
+		}
+		else {
+			sprintf(buf, "(%c)%c", argC, rc);
+		}
 	}
 }
 
@@ -278,7 +347,7 @@ void getString(jstring returnValue, JNIEnv* persistentJNI, td_val_t* out) {
 	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI, returnValue,	returnString);
 //	printf("2 got here - %s\n", (char *)str->data);
 	(*persistentJNI)->DeleteLocalRef(persistentJNI, returnValue); // not sure if this is required
-	printf("3 got here - %s\n", (char *)str->data);
+	//printf("3 got here - %s\n", (char *)str->data);
 
 }
 
@@ -494,6 +563,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	} else if (strcmp(returnString, "int") == 0) {
 		//printf("orig %d\n",arg->int32_val);
 		//printf("calling int with %d\n",val.i);
+		printf("calling int with \n");
 		//out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val);
 
 		switch (td_typeof(arg)) {
@@ -520,6 +590,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.d);
 			break;
 		case TD_UTF8:
+		case TD_ARRAY:
 			out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val.l);
 			break;
 		}
