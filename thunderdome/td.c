@@ -139,3 +139,34 @@ void td_provide_python(td_env_t *e)
 {
     cached_python_env = e;
 }
+
+static td_env_t *cached_java_env=NULL;
+
+td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
+{
+    char path[512];
+
+    if (cached_java_env == NULL) {
+        snprintf(path, sizeof(path), "%s%s%s%s",
+                 plugin_path, PATHSEPSTRING, "libtd_java", ".so"); //SHLIB_EXT);
+      //  printf("looking for lib at %s\n", path);
+        void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
+        if (h == NULL) {
+        	h = dlopen("libtd_java.dll", RTLD_GLOBAL | RTLD_NOW);
+        }
+        if (h == NULL) {
+        	fprintf(stderr, "%s\n", dlerror());
+        	td_error("could not load libjava\n");
+        }
+        void (*init)(char*,char*) = dlsym(h, "td_java_init");
+        init(classpath, java_path);
+        assert(cached_java_env);
+    }
+
+    return cached_java_env;
+}
+
+void td_provide_java(td_env_t *e)
+{
+    cached_java_env = e;
+}

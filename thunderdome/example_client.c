@@ -3,6 +3,10 @@
 
 #include "td.h"
 
+// this is the class that's called below... change it to use something else...
+#define MAIN_CLASS "xlang/java/Xlang"
+
+// for java, first argument can be a classpath
 int main(int argc, char *argv[])
 {
 #ifdef TD_HAS_JULIA
@@ -39,6 +43,57 @@ int main(int argc, char *argv[])
 
     py->invoke1(&out_py, "int", &arg);
     printf("int(2) = %d\n", td_int32(&out_py));
+#endif
+
+#ifdef TD_HAS_JAVA
+
+    td_val_t out_java;
+
+    char *classpath = "out";
+    if (argc == 2) {
+    	classpath = argv[1];
+    }
+    td_env_t *java_env = td_env_java(".",classpath,MAIN_CLASS);
+
+    // tests!
+    java_env->invoke0(&out_java, "nextInt");
+    printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
+
+    java_env->invoke0(&out_java, "nextBool");
+    printf("nextBool() = %d\n", td_int32(&out_java));
+
+    java_env->invoke0(&out_java, "nextDouble");
+    printf("nextDouble() = %f\n", td_double(&out_java));
+
+
+   // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+
+    td_val_t arg = { TD_INT32, 4 };
+    java_env->invoke1(&out_java, "sqr", &arg);
+    printf("sqr(2) = %d\n", td_int32(&out_java));
+
+    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sin", &arg);
+    printf("sin(%f) = %f\n", arg.double_val, td_double(&out_java));
+
+    arg.tag = TD_INT32; arg.int32_val = 4;
+    java_env->invoke1(&out_java, "isEven", &arg);
+    printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
+
+    arg.tag = TD_INT32; arg.int32_val = 3;
+    java_env->invoke1(&out_java, "isEven", &arg);
+    printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
+
+    // error test cases -------------------------------------------
+
+    // bad method name
+    java_env->invoke0(&out_java, "unknownMethod");
+    printf("unknownMethod() = %f\n", td_double(&out_java));
+
+    // another error case - no sqr that takes a double
+    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sqr", &arg);
+    printf("sqr(%f) = %f\n", arg.double_val, td_double(&out_java));
 #endif
 
     return 0;
