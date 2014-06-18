@@ -56,6 +56,18 @@ int main(int argc, char *argv[])
     td_env_t *java_env = td_env_java(".",classpath,MAIN_CLASS);
 
     // tests!
+
+    td_string_t str;
+    str.length = 7;
+    str.data = "Bueller";
+
+    td_val_t arg;
+    arg.tag = TD_UTF8; arg.object = &str;
+    java_env->invoke1(&out_java, "strLen", &arg);
+    printf("strLen(%s) = %d\n", (char *)((td_string_t *)arg.object)->data, td_int32(&out_java));
+
+    if (1) return 0;
+
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
@@ -65,10 +77,7 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "nextDouble");
     printf("nextDouble() = %f\n", td_double(&out_java));
 
-
-   // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
-
-    td_val_t arg = { TD_INT32, 4 };
+    arg.tag = TD_INT32; arg.double_val = 4;
     java_env->invoke1(&out_java, "sqr", &arg);
     printf("sqr(2) = %d\n", td_int32(&out_java));
 

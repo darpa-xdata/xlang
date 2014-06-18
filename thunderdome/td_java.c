@@ -9,7 +9,7 @@
 
 JNIEnv *persistentJNI;
 const char *persistentClass;
-int debug = 0;
+int debug = 1;
 // type mapping
 
 JNIEnv* create_vm(JavaVM ** jvm, const char *classpath) {
@@ -129,7 +129,7 @@ void setValueFromType(td_val_t *arg, jvalue * val) {
 		val->l = arg->object;
 		break;
 	case TD_UTF8:
-		val->l = arg->object;
+		val->l = (*persistentJNI)->NewStringUTF(persistentJNI,(char *)((td_string_t *)arg->object)->data);
 		break;
 	}
 }
@@ -235,11 +235,10 @@ void getSignature(const char* returnString, char buf[512], td_val_t* arg) {
 	char rc = setReturnTdVal(returnString);
 	char argC = getArgFromType(arg);
 	if (td_typeof(arg) == TD_UTF8) {
-		sprintf(buf, "([Ljava/lang/String;)%c", rc);
+		sprintf(buf, "(Ljava/lang/String;)%c", rc);
 	} else {
 		sprintf(buf, "(%c)%c", argC, rc);
 	}
-	//return buf;
 }
 
 //! call a static java function with one parameter -- determine the method signature from the arguments here
@@ -270,7 +269,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		return;
 
 	}
-	//printf("found return type method for %s\n",fname);
+	if (debug) printf("found return type method for %s\n",fname);
 
 	jstring message = (*persistentJNI)->NewStringUTF(persistentJNI, fname);
 	jstring returnTypeMethod = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, returnType, message);
@@ -283,13 +282,12 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
     char signature[512];
 	getSignature(returnString, signature, arg);
 	if (debug) printf("signature is %s\n",signature);
-//	if (debug) printf("return is %s\n",returnString);
 
 	// 4) Get the method given the name and signature
 	jmethodID methodToCall = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, signature);
 
 	if (methodToCall == NULL) {
-		printf("ERROR : can't find Xlang method %s with signature %s?\n",fname,signature);
+		printf("ERROR : can't find Xlang method %s with signature %s?\n", fname, signature);
 		out->tag = TD_UNKNOWN;
 		return;
 	}
@@ -479,8 +477,8 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 		out->tag = TD_FLOAT;
 	} else if (strcmp(returnString, "int") == 0) {
 		//printf("orig %d\n",arg->int32_val);
-		printf("calling int with %d\n",val.i);
-		out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val);
+		//printf("calling int with %d\n",val.i);
+		//out->int32_val =(*persistentJNI)->CallStaticIntMethod(persistentJNI, clsH, methodToCall,val);
 
 		switch (td_typeof(arg)) {
 				case TD_INT8:
@@ -512,6 +510,9 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 					break;
 				case TD_DOUBLE:
 					out->int32_val =(*persistentJNI)->CallStaticDoubleMethod(persistentJNI, clsH, methodToCall,val.d);
+					break;
+				case TD_UTF8:
+					out->int32_val =(*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, methodToCall,val.l);
 					break;
 				}
 

@@ -3,6 +3,8 @@ package xlang.java;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -50,6 +52,23 @@ public class Xlang {
   }
   public static double nextDouble() {
     return random.nextDouble();
+  }
+  public static String toUpper(String str) {
+    return str.toUpperCase();
+  }
+  public static int howMany(List<String> strs) {
+    return strs.size();
+  }
+  public static List<String> toUpper(List<String> strs) {
+    List<String>ret = new ArrayList<String>();
+    for (String s:strs) ret.add(s.toUpperCase());
+    return ret;
+  }
+
+  public static int sum(List<Integer> nums) {
+    int total = 0;
+    for (Integer s:nums) total+=s;
+    return total;
   }
 
   public static String [] getMethods() {
