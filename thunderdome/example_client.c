@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
     java_env->invoke1(&out_java, "toUpper", &arg);
     printf("toUpper(%s) = %s\n", (char *)((td_string_t *)arg.object)->data, (char *)((td_string_t *)out_java.object)->data);//(char *)td_pointer(&out_java));
 
+    // sum some ints
     td_array_t arr;
     arr.eltype = TD_INT32;
     arr.length = 3;
@@ -78,6 +79,14 @@ int main(int argc, char *argv[])
     arg.tag = TD_ARRAY; arg.object = &arr;
     java_env->invoke1(&out_java, "sumArr", &arg);
     printf("sum = %d\n",  td_int32(&out_java));
+
+    double dnums[3] = {3.14,3.14,3.14};
+    arr.eltype = TD_DOUBLE;
+    arr.data = &dnums;
+    arg.tag = TD_ARRAY; arg.object = &arr;
+    java_env->invoke1(&out_java, "sumDoubleArr", &arg);
+    printf("sum = %f\n",  td_double(&out_java));
+
 
 
     if (1) return 0;

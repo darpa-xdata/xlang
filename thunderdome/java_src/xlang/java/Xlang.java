@@ -76,10 +76,21 @@ public class Xlang {
 
   public static int sumArr(int [] nums) {
     int total = 0;
-    System.out.println("sumArr got len " +nums.length);
+   // System.out.println("sumArr got len " +nums.length);
 
     for (int s:nums) {
-      System.out.println("got " +s);
+ //     System.out.println("got " +s);
+      total+=s;
+    }
+    return total;
+  }
+
+  public static double sumDoubleArr(double [] nums) {
+    double total = 0;
+    //System.out.println("sumArr got len " +nums.length);
+
+    for (double s:nums) {
+      //System.out.println("got " +s);
       total+=s;
     }
     return total;
