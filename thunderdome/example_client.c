@@ -84,6 +84,18 @@ int main(int argc, char *argv[])
     java_env->invoke1(&out_java, "howManyArr", &arg);
     printf("howManyArr = %d\n",  td_int32(&out_java));
 
+
+    td_array_t arr2;
+    arr2.eltype = TD_UTF8;
+    arr2.length = 0;
+
+//    arr.data = words;
+    td_val_t arg2;
+
+    arg2.tag = TD_ARRAY; arg2.object = &arr;
+    java_env->invoke2(&out_java, "toUpperInOut", &arg, &arg2);
+    printf("toUpperInOut \n");
+
     if (1) return 0;
 
     // sum ints

@@ -63,7 +63,7 @@ public class Xlang {
   }
 
   public static int howManyArr(String [] strs) {
-    for (int i = 0; i < strs.length; i++) System.out.println("#"+i + " : " + strs[i]);
+   // for (int i = 0; i < strs.length; i++) System.out.println("#"+i + " : " + strs[i]);
 
     return strs.length;
   }
