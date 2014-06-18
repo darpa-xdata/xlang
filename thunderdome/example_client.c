@@ -68,10 +68,26 @@ int main(int argc, char *argv[])
 
     arg.tag = TD_UTF8; arg.object = &str;
     java_env->invoke1(&out_java, "toUpper", &arg);
-    printf("toUpper(%s) = %s\n", (char *)((td_string_t *)arg.object)->data, (char *)((td_string_t *)out_java.object)->data);//(char *)td_pointer(&out_java));
+    printf("toUpper(%s) = %s\n", (char *)((td_string_t *)arg.object)->data, (char *)((td_string_t *)out_java.object)->data);
 
-    // sum some ints
     td_array_t arr;
+    arr.eltype = TD_UTF8;
+    arr.length = 3;
+
+    td_string_t str1 = { "one",3};
+    td_string_t str2 = { "two",3};
+    td_string_t str3 = { "three",5};
+    //char * words[3] = {"one","two","three"};
+    td_string_t * words[3] = {&str1,&str2,&str3};
+    arr.data = words;
+    arg.tag = TD_ARRAY; arg.object = &arr;
+    java_env->invoke1(&out_java, "howManyArr", &arg);
+    printf("howManyArr = %d\n",  td_int32(&out_java));
+
+    if (1) return 0;
+
+    // sum ints
+   // td_array_t arr;
     arr.eltype = TD_INT32;
     arr.length = 3;
     int nums[3] = {1,2,3};
@@ -80,16 +96,13 @@ int main(int argc, char *argv[])
     java_env->invoke1(&out_java, "sumArr", &arg);
     printf("sum = %d\n",  td_int32(&out_java));
 
+    // sum doubles
     double dnums[3] = {3.14,3.14,3.14};
     arr.eltype = TD_DOUBLE;
     arr.data = &dnums;
     arg.tag = TD_ARRAY; arg.object = &arr;
     java_env->invoke1(&out_java, "sumDoubleArr", &arg);
     printf("sum = %f\n",  td_double(&out_java));
-
-
-
-    if (1) return 0;
 
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));

@@ -56,18 +56,31 @@ public class Xlang {
   public static String toUpper(String str) {
     return str.toUpperCase();
   }
+
+  // not supported
   public static int howMany(List<String> strs) {
     return strs.size();
   }
+
   public static int howManyArr(String [] strs) {
+    for (int i = 0; i < strs.length; i++) System.out.println("#"+i + " : " + strs[i]);
+
     return strs.length;
   }
+
+  public static void toUpperInOut(String [] inValues, String [] outValues) {
+    for (int i = 0; i < inValues.length; i++) outValues[i] = inValues[i].toUpperCase();
+
+  }
+
+  // not supported
   public static List<String> toUpperList(List<String> strs) {
     List<String>ret = new ArrayList<String>();
     for (String s:strs) ret.add(s.toUpperCase());
     return ret;
   }
 
+  // not supported
   public static int sum(List<Integer> nums) {
     int total = 0;
     for (Integer s:nums) total+=s;
@@ -76,10 +89,7 @@ public class Xlang {
 
   public static int sumArr(int [] nums) {
     int total = 0;
-   // System.out.println("sumArr got len " +nums.length);
-
     for (int s:nums) {
- //     System.out.println("got " +s);
       total+=s;
     }
     return total;
@@ -87,10 +97,7 @@ public class Xlang {
 
   public static double sumDoubleArr(double [] nums) {
     double total = 0;
-    //System.out.println("sumArr got len " +nums.length);
-
     for (double s:nums) {
-      //System.out.println("got " +s);
       total+=s;
     }
     return total;
@@ -122,8 +129,6 @@ public class Xlang {
    * @return
    */
   public static String getMethodDescriptor(String method) {
-  //  Method[] declaredMethods = Xlang.class.getDeclaredMethods();
-  //  String[] methods = new String[declaredMethods.length];
     int i = 0;
     for (Method m : Xlang.class.getDeclaredMethods()) {
       if (method.equalsIgnoreCase(m.getName())) {
@@ -160,18 +165,12 @@ public class Xlang {
   }
 
   public static void main(String[] arg) {
-
     System.out.println("hello xlang!");
 
     for (Method m : Xlang.class.getDeclaredMethods()) {
       System.out.println("method " + m);
-
       String methodDescriptor = getMethodDescriptor(m.getName());
       System.out.println("\tmethodDescriptor " + methodDescriptor);
-
-
-
     }
-
   }
 }

@@ -109,6 +109,20 @@ jdoubleArray makeDoubleArray( int length, double * values) {
 	return outJNIArray;
 }
 
+jobjectArray makeStringArray( int length, td_string_t ** values) {
+	JNIEnv *env = persistentJNI;
+	jclass classString = (*env)->FindClass(env, "java/lang/String");
+	jobjectArray outJNIArray = (*env)->NewObjectArray(env, length,classString,NULL);
+	int i = 0;
+	for (; i < length; i++) {
+		jstring val = (*env)->NewStringUTF(env, (char *) values[i]->data);
+		(*env)->SetObjectArrayElement(env, outJNIArray, i, val);
+	}
+
+	//(*env)->SetDoubleArrayRegion(env, outJNIArray, 0, length, values);  // copy
+	return outJNIArray;
+}
+
 
 // TODO: if TD_UTF8 - release the string we pass in...
 void setValueFromType(td_val_t *arg, jvalue * val) {
@@ -157,6 +171,9 @@ void setValueFromType(td_val_t *arg, jvalue * val) {
 			break;
 		case TD_DOUBLE:
 			val->l = makeDoubleArray(arr->length,(double*)arr->data);
+			break;
+		case TD_UTF8:
+			val->l = makeStringArray(arr->length,(td_string_t**)arr->data);
 			break;
 			// TODO : fill in all the rest
 		}
@@ -295,6 +312,9 @@ void getSignature(const char* returnString, char buf[512], td_val_t* arg) {
 			case TD_DOUBLE:
 				argType = "D";
 				break;
+			case TD_UTF8:
+					argType = "Ljava/lang/String;";
+					break;
 				// TODO : fill in all the rest
 			}
 			sprintf(buf, "([%s)%c", argType, rc);
