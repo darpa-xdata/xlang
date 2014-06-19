@@ -188,13 +188,13 @@ void setValueFromArgument(td_val_t *arg, jvalue * val) {
 jstring getReturnType(char** fname, jclass* clsH) {
 	jclass clsXlang = (*persistentJNI)->FindClass(persistentJNI, "xlang/java/Xlang");
 	if (clsXlang == NULL) {
-		printf("can't find %s class?\n", "xlang/java/Xlang");
+		printf("getReturnType can't find %s class?\n", "xlang/java/Xlang");
 		//return;
 	}
 	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsXlang, "getReturnTypeInClass",
 			"(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
 	if (returnType == NULL) {
-		printf("can't find Xlang method %s?\n", "getReturnTypeInClass");
+		printf("getReturnType can't find Xlang method %s?\n", "getReturnTypeInClass");
 		return NULL;
 	}
 	//printf("found return type method for %s\n",fname);
@@ -224,7 +224,7 @@ void td_java_invoke0(td_val_t *out, char *fname)
 {
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
 	if (clsH == NULL) {
-		printf("can't find %s class?\n",persistentClass);
+		printf("td_java_invoke0 can't find %s class?\n", persistentClass);
 		return;
 	}
 
@@ -415,7 +415,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	jmethodID methodToCall = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, signature);
 
 	if (methodToCall == NULL) {
-		printf("ERROR : can't find method %s with signature %s in %s ?\n", fname, signature, persistentClass);
+		printf("ERROR : can't find method %s with signature %s in %s?\n", fname, signature, persistentClass);
 		out->tag = TD_UNKNOWN;
 		return;
 	}
@@ -737,7 +737,7 @@ void td_java_invoke2(td_val_t *out, char *fname, td_val_t *arg, td_val_t *second
 	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, "getReturnType", "(Ljava/lang/String;)Ljava/lang/String;");
 
 	if (returnType == NULL) {
-		printf("can't find Xlang method %s?\n","returnType");
+		printf("td_java_invoke2 : can't find Xlang method %s?\n","returnType");
 		return;
 
 	}
@@ -1070,6 +1070,39 @@ void td_java_invoke2(td_val_t *out, char *fname, td_val_t *arg, td_val_t *second
 	(*persistentJNI)->DeleteLocalRef(persistentJNI,returnTypeMethod);
 }
 
+void td_java_getgraph0(graph_t *out, char *fname)
+{
+	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
+	if (clsH == NULL) {
+		printf("td_java_getgraph0 : can't find %s class?\n",persistentClass);
+		return;
+	}
+
+	jstring string = getReturnType(&fname, &clsH);
+    const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
+
+    printf("td_java_getgraph0 return type for %s is %s\n",fname,returnString);
+
+    char buf[512];
+    char rc = setReturnTdVal(returnString);
+    if (rc == '?') {
+    	sprintf(buf,"()L%s",returnString);
+    }
+    else {
+    	sprintf(buf,"()%c",rc);
+    }
+  	//printf("signature is %s\n",buf);
+
+	jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, buf);
+
+
+	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI,string, returnString);
+	(*persistentJNI)->DeleteLocalRef(persistentJNI,string);
+
+	//printf ("called Xlang method %s\n",fname);
+}
+
+
 void td_java_eval(td_val_t *out, char *str)
 {
    // java_value_t *v = java_eval_string(str);
@@ -1131,7 +1164,7 @@ td_env_t *get_java(const char *classpath, const char *javaClass) {
 	JNIEnv *jniEnv;
 	JavaVM * jvm;
 
-	printf("called get java with %s and %s\n",classpath,javaClass);
+	printf("get_java : called get java with %s and %s\n",classpath,javaClass);
 
 	jniEnv = create_vm(&jvm, classpath);
 	persistentJNI = jniEnv;
@@ -1152,6 +1185,8 @@ td_env_t *get_java(const char *classpath, const char *javaClass) {
 	env->invoke0 = &td_java_invoke0;
 	env->invoke1 = &td_java_invoke1;
 	env->invoke2 = &td_java_invoke2;
+	env->getGraph0 = &td_java_getgraph0;
+	//env->getGraph1 = &td_java_graph1;
 	//env->invoke3
 
 	//env->retain

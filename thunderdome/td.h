@@ -120,6 +120,16 @@ typedef struct {
     };
 } td_val_t;
 
+typedef struct {
+	int numNodes;
+	char **nodeNames;
+	int numValues;
+	double *values;
+	int numRowPtrs;
+	int *rowValueOffsets;
+	int *colOffsets;
+} graph_t;
+
 typedef struct _td_env_t {
     char *name;
 
@@ -132,6 +142,8 @@ typedef struct _td_env_t {
     void (*invoke1)(td_val_t *out, char *f, td_val_t *);
     void (*invoke2)(td_val_t *out, char *f, td_val_t *, td_val_t *);
     void (*invoke3)(td_val_t *out, char *f, td_val_t *, td_val_t *, td_val_t *);
+    void (*getGraph0)(graph_t *out, char *f);
+    void (*getGraph1)(graph_t *out, char *f, graph_t *);
 
     // acquire and release references to owned objects
     void (*retain)(void *obj);

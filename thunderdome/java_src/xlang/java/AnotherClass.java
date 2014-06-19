@@ -1,13 +1,12 @@
 package xlang.java;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.Random;
 
 /**
  Another example illustrating we can use another class.
  */
-public class Math {
+public class AnotherClass {
   static Random random = new Random();
   public static int sqr(int n) {
     return n * n;
@@ -22,7 +21,7 @@ public class Math {
 
   public static String getReturnType(String method) {
     int i = 0;
-    for (Method m : Math.class.getDeclaredMethods()) {
+    for (Method m : AnotherClass.class.getDeclaredMethods()) {
       if (method.equalsIgnoreCase(m.getName())) {
 
         String s = m.getGenericReturnType().toString();
@@ -35,7 +34,7 @@ public class Math {
   }
 
   public static void main(String[] arg) {
-    System.out.println("hello from " +Math.class.getClass());
+    System.out.println("hello from " +AnotherClass.class.getClass());
 
   }
 }

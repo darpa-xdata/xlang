@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
 
     td_val_t out_java;
 
-    char *classpath = "out";
+    // modify as you pull in more jars
+    char *classpath = "out:lib/la4j-0.4.9.jar:lib/commons-lang3-3.3.2.jar";
     if (argc == 2) {
     	classpath = argv[1];
     }
@@ -59,7 +60,12 @@ int main(int argc, char *argv[])
 
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
-//    if (1) return 0;
+
+    graph_t out_graph;
+    java_env->getGraph0(&out_graph, "getExampleGraph");
+    printf("getExampleGraph() = \n");
+
+    if (1) return 0;
 
     td_string_t str;
     str.length = 7;
