@@ -146,6 +146,33 @@ public class Xlang {
   }
 
 
+  public static String getReturnTypeInClass(String className, String method) {
+    int i = 0;
+
+    Class<?> xlangClass = null;
+    try {
+      xlangClass = Class.forName(className.replaceAll("\\/","\\."));
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+      return "No_Class_found";
+    }
+    for (Method m : xlangClass.getDeclaredMethods()) {
+      if (method.equalsIgnoreCase(m.getName())) {
+
+        String s = m.getGenericReturnType().toString();
+        if (s.startsWith("class ")) {
+          s = s.substring("class ".length());
+          s = s.replaceAll("\\.","\\/");
+        }
+
+        return s;
+
+      }
+    }
+    return "NoMethod";
+  }
+
+
   public static String getReturnType(String method) {
     int i = 0;
     for (Method m : Xlang.class.getDeclaredMethods()) {

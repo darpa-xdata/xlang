@@ -124,7 +124,7 @@ jobjectArray makeStringArray( int length, td_string_t ** values) {
 
 
 // TODO: if TD_UTF8 - release the string we pass in...
-void setValueFromType(td_val_t *arg, jvalue * val) {
+void setValueFromArgument(td_val_t *arg, jvalue * val) {
 	switch (td_typeof(arg)) {
 	case TD_INT8:
 		val->b = arg->int8_val;
@@ -184,6 +184,25 @@ void setValueFromType(td_val_t *arg, jvalue * val) {
 	}
 }
 
+// ask the Xlang class to get the return type for function fname in class clsH
+jstring getReturnType(char** fname, jclass* clsH) {
+	jclass clsXlang = (*persistentJNI)->FindClass(persistentJNI, "xlang/java/Xlang");
+	if (clsXlang == NULL) {
+		printf("can't find %s class?\n", "xlang/java/Xlang");
+		//return;
+	}
+	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsXlang, "getReturnTypeInClass",
+			"(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+	if (returnType == NULL) {
+		printf("can't find Xlang method %s?\n", "getReturnTypeInClass");
+		return NULL;
+	}
+	//printf("found return type method for %s\n",fname);
+	jstring methodName = (*persistentJNI)->NewStringUTF(persistentJNI, *fname);
+	jstring className  = (*persistentJNI)->NewStringUTF(persistentJNI, persistentClass);
+	jstring string = (*persistentJNI)->CallStaticObjectMethod(persistentJNI,*clsH, returnType, className, methodName);
+	return string;
+}
 
 /**
  * boolean      Z
@@ -205,22 +224,11 @@ void td_java_invoke0(td_val_t *out, char *fname)
 {
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
 	if (clsH == NULL) {
-		printf("can't find Xlang class?\n");
+		printf("can't find %s class?\n",persistentClass);
 		return;
 	}
 
-	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, "getReturnType", "(Ljava/lang/String;)Ljava/lang/String;");
-
-	if (returnType == NULL) {
-		printf("can't find Xlang method %s?\n","returnType");
-		return;
-
-	}
-	//printf("found return type method for %s\n",fname);
-
-	jstring message = (*persistentJNI)->NewStringUTF(persistentJNI, fname);
-	jstring string = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, returnType,message);
-
+	jstring string = getReturnType(&fname, &clsH);
     const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
 
     //printf("return type for %s is %s\n",fname,returnString);
@@ -238,12 +246,11 @@ void td_java_invoke0(td_val_t *out, char *fname)
 	jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, buf);
 
 	if (midMain == NULL) {
-		printf("ERROR : can't find Xlang method %s with signature %s?\n",fname,buf);
+		printf("ERROR : can't find method %s with signature %s in %s?\n",fname,buf,persistentClass);
 		out->tag = TD_UNKNOWN;
 		return;
 	}
 	//printf ("found Xlang method %s\n",fname);
-
 
 	if (strcmp(returnString, "boolean") == 0) {
 		out->int32_val = (*persistentJNI)->CallStaticBooleanMethod(persistentJNI, clsH, midMain);
@@ -386,7 +393,6 @@ void getString(jstring returnValue, JNIEnv* persistentJNI, td_val_t* out) {
 */
 void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-	//const char* persistentClass = "xlang/java/Xlang";
 	// 1) Find the class we want to use
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
 	if (clsH == NULL) {
@@ -395,18 +401,7 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	}
 
 	// 2) Find the return type for the method we want to call
-	jmethodID returnType = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, "getReturnType", "(Ljava/lang/String;)Ljava/lang/String;");
-
-	if (returnType == NULL) {
-		printf("can't find Xlang method %s?\n","returnType");
-		return;
-
-	}
-	if (debug) printf("found return type method for %s\n",fname);
-
-	jstring message = (*persistentJNI)->NewStringUTF(persistentJNI, fname);
-	jstring returnTypeMethod = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, returnType, message);
-
+	jstring returnTypeMethod = getReturnType(&fname, &clsH);
 	const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI, returnTypeMethod, 0);
 
 	if (debug) printf("return type for %s is %s\n",fname,returnString);
@@ -420,13 +415,13 @@ void td_java_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 	jmethodID methodToCall = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, signature);
 
 	if (methodToCall == NULL) {
-		printf("ERROR : can't find Xlang method %s with signature %s?\n", fname, signature);
+		printf("ERROR : can't find method %s with signature %s in %s ?\n", fname, signature, persistentClass);
 		out->tag = TD_UNKNOWN;
 		return;
 	}
 
     jvalue val;
-	setValueFromType(arg, &val);
+	setValueFromArgument(arg, &val);
 
 	// 5) Finally lets call the method with the right type, depending on the argument type and grap the return value
 
@@ -772,7 +767,7 @@ void td_java_invoke2(td_val_t *out, char *fname, td_val_t *arg, td_val_t *second
 
 	// TODO : make an array of jvalues to pass in
     jvalue val;
-	setValueFromType(arg, &val);
+	setValueFromArgument(arg, &val);
 
 	// 5) Finally lets call the method with the right type, depending on the argument type and grap the return value
 
@@ -1133,8 +1128,6 @@ void td_java_init(const char *classpath, const char *javaClass)
 \return the callable
 */
 td_env_t *get_java(const char *classpath, const char *javaClass) {
-
-
 	JNIEnv *jniEnv;
 	JavaVM * jvm;
 

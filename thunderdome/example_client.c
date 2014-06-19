@@ -4,7 +4,7 @@
 #include "td.h"
 
 // this is the class that's called below... change it to use something else...
-#define MAIN_CLASS "xlang/java/Xlang"
+#define MAIN_CLASS "xlang/java/GraphAlgorithms"
 
 // for java, first argument can be a classpath
 int main(int argc, char *argv[])
@@ -53,9 +53,13 @@ int main(int argc, char *argv[])
     if (argc == 2) {
     	classpath = argv[1];
     }
-    td_env_t *java_env = td_env_java(".",classpath,MAIN_CLASS);
+    td_env_t *java_env = td_env_java(".",classpath, MAIN_CLASS);
 
     // tests!
+
+    java_env->invoke0(&out_java, "nextInt");
+    printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
+//    if (1) return 0;
 
     td_string_t str;
     str.length = 7;
