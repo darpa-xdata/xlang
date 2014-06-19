@@ -7,6 +7,7 @@
 
 #include "td.h"
 
+static const char* XLANG_JAVA_GRAPH = "xlang/java/Graph";
 JNIEnv *persistentJNI;
 const char *persistentClass;
 int debug = 0;
@@ -378,6 +379,21 @@ void getString(jstring returnValue, JNIEnv* persistentJNI, td_val_t* out) {
 	out->tag = TD_UTF8;
 	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI, returnValue,	returnString);
 	(*persistentJNI)->DeleteLocalRef(persistentJNI, returnValue); // not sure if this is required
+
+}
+
+char * getStringSimple(jstring returnValue) {
+	//td_string_t *str = (td_string_t*)malloc(sizeof(td_string_t));
+	const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI, returnValue, 0);
+	//str->length = strlen(returnString);
+	int len = strlen(returnString);
+	char * str = malloc(sizeof(char)*(len+1)); // add space for trailing 0
+	strcpy(str, returnString);
+
+	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI, returnValue,	returnString);
+	(*persistentJNI)->DeleteLocalRef(persistentJNI, returnValue); // not sure if this is required
+
+	return str;
 
 }
 
@@ -1083,17 +1099,42 @@ void td_java_getgraph0(graph_t *out, char *fname)
 
     printf("td_java_getgraph0 return type for %s is %s\n",fname,returnString);
 
-    char buf[512];
-    char rc = setReturnTdVal(returnString);
-    if (rc == '?') {
-    	sprintf(buf,"()L%s",returnString);
+	if (strcmp(returnString, XLANG_JAVA_GRAPH) == 0) {
+    	jmethodID getGraph = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "()Lxlang/java/Graph;");
+    	//jstring methodName = (*persistentJNI)->NewStringUTF(persistentJNI, *fname);
+    	//jstring className  = (*persistentJNI)->NewStringUTF(persistentJNI, persistentClass);
+    	jobject graph = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, getGraph);
+
+
+    	// Get the class
+    	jclass mvclass = (*persistentJNI)->GetObjectClass(persistentJNI,graph);
+    	// Get method ID for method getSomeDoubleArray that returns a double array
+    	jmethodID mid = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getNodeNames", "()[Ljava/lang/String;");
+    	// Call the method, returns JObject (because Array is instance of Object)
+    	jobjectArray arr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, mid);
+    	// Cast it to a jdoublearray
+    	//jobjectArray * arr = (jobjectArray*)(&mvdata);
+    	// Get the elements (you probably have to fetch the length of the array as well
+    	int i = 0;
+		jsize arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, arr);
+		printf("got node name array length %d\n",arrLength);
+
+		for (; i < arrLength; i++) {
+        	jobject data = (*persistentJNI)->GetObjectArrayElement(persistentJNI,arr, i);
+			char * nodeName = getStringSimple((jstring)data);
+			printf("got node name %s\n",nodeName);
+
+    	}
+
+    	// Don't forget to release it
+    	//(*persistentJNI)->ReleaseDoubleArrayElements(*arr, data, 0);
+
     }
     else {
-    	sprintf(buf,"()%c",rc);
+    	printf("ERROR expecting a graph as a return value instead of %s\n",  returnString);
     }
-  	//printf("signature is %s\n",buf);
 
-	jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, buf);
+	//jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "()Lxlang/java/Graph;");
 
 
 	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI,string, returnString);

@@ -56,7 +56,10 @@ public class GraphAlgorithms  {
 
     String[] nodeNames = {"one", "two", "three", "four"};
 
-    return new Graph(nodeNames, matrix);
+    Graph graph = new Graph(nodeNames, matrix);
+    System.out.println("example " + graph);
+
+    return graph;
   }
 
   public static Graph getExampleGraph2() {

@@ -26,10 +26,8 @@ class Graph {
   }
 
   public Graph(String[] nodeNames, Matrix matrix) {
-    //String[] nodeNames = {"one", "two", "three", "four"};
     this.nodeNames = nodeNames;
     int n = nodeNames.length;
-    //CRSMatrix crsMatrix = new CRSMatrix(matrix);
     List<Double> values = new ArrayList<Double>();
     List<Integer> rowIndex = new ArrayList<Integer>();
     List<Integer> colIndex = new ArrayList<Integer>();
@@ -37,7 +35,6 @@ class Graph {
     int nonZero = 0;
     for (int r = 0; r < matrix.rows(); r++) {
       Vector row = matrix.getRow(r);
-//      int prev = nonZero;
       rowIndex.add(nonZero);
       if (!row.is(Vectors.ZERO_VECTOR)) {
         for (int c = 0; c < n; c++) {
@@ -48,13 +45,7 @@ class Graph {
             nonZero++;
           }
         }
-        //if (rowIndex.isEmpty()) {
-        //  rowIndex.add(0);
-        //}
-       // rowIndex.add(nonZero);
       }
-     // else {
-     // }
     }
     rowIndex.add(values.size());
     this.values   = ArrayUtils.toPrimitive(values.toArray(new Double[values.size()]));
@@ -64,34 +55,50 @@ class Graph {
 
   // recover original matrix
   public double[][] toMatrix() {
-    double [][] matrix = new double[nodeNames.length][nodeNames.length];
-    for (int r = 0; r < rowIndex.length-1;r++) {
-      int vs = rowIndex[r];
-      int ve = rowIndex[r+1];
+    double [][] matrix = new double[getNodeNames().length][getNodeNames().length];
+    for (int r = 0; r < getRowIndex().length-1;r++) {
+      int vs = getRowIndex()[r];
+      int ve = getRowIndex()[r+1];
      // rowIndex[r];
       //int re = rs+1;
       for (int voffset  = vs; voffset < ve; voffset++) {
-        double value = values[voffset];
-        int col = colIndex[voffset];
+        double value = getValues()[voffset];
+        int col = getColIndex()[voffset];
         matrix[r][col] = value;
       }
     }
     return matrix;
   }
 
+  public String[] getNodeNames() {
+    return nodeNames;
+  }
+
+  public double[] getValues() {
+    return values;
+  }
+
+  public int[] getRowIndex() {
+    return rowIndex;
+  }
+
+  public int[] getColIndex() {
+    return colIndex;
+  }
+
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("[");
-    for (String s : nodeNames) builder.append(s).append(",");
+    for (String s : getNodeNames()) builder.append(s).append(",");
     builder.append("],\n[");
 
-    for (Double s : values) builder.append(s).append(",");
+    for (Double s : getValues()) builder.append(s).append(",");
     builder.append("],\n[");
 
-    for (Integer s : rowIndex) builder.append(s).append(",");
+    for (Integer s : getRowIndex()) builder.append(s).append(",");
     builder.append("],\n[");
 
-    for (Integer s : colIndex) builder.append(s).append(",");
+    for (Integer s : getColIndex()) builder.append(s).append(",");
     builder.append("]");
 
     return builder.toString();
