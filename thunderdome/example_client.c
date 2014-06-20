@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
     graph_t out_graph;
-    java_env->getGraph0(&out_graph, "getExampleGraph");
-    printf("getExampleGraph() = \n");
+    java_env->invokeGraph0(&out_graph, "getExampleGraph");
+    printf("getExampleGraph() = %d \n", out_graph.numNodes);
 
     if (1) return 0;
 

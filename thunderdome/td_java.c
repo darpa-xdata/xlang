@@ -1101,10 +1101,7 @@ void td_java_getgraph0(graph_t *out, char *fname)
 
 	if (strcmp(returnString, XLANG_JAVA_GRAPH) == 0) {
     	jmethodID getGraph = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "()Lxlang/java/Graph;");
-    	//jstring methodName = (*persistentJNI)->NewStringUTF(persistentJNI, *fname);
-    	//jstring className  = (*persistentJNI)->NewStringUTF(persistentJNI, persistentClass);
     	jobject graph = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, getGraph);
-
 
     	// Get the class
     	jclass mvclass = (*persistentJNI)->GetObjectClass(persistentJNI,graph);
@@ -1112,21 +1109,20 @@ void td_java_getgraph0(graph_t *out, char *fname)
     	jmethodID mid = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getNodeNames", "()[Ljava/lang/String;");
     	// Call the method, returns JObject (because Array is instance of Object)
     	jobjectArray arr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, mid);
-    	// Cast it to a jdoublearray
-    	//jobjectArray * arr = (jobjectArray*)(&mvdata);
     	// Get the elements (you probably have to fetch the length of the array as well
     	int i = 0;
 		jsize arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, arr);
-		printf("got node name array length %d\n",arrLength);
+//		printf("got node name array length %d\n",arrLength);
 
+		out->nodeNames = malloc(arrLength * sizeof(char*));
 		for (; i < arrLength; i++) {
         	jobject data = (*persistentJNI)->GetObjectArrayElement(persistentJNI,arr, i);
 			char * nodeName = getStringSimple((jstring)data);
-			printf("got node name %s\n",nodeName);
-
+			//printf("got node name %s\n",nodeName);
+			out->nodeNames[i] = nodeName;
     	}
-
-    	// Don't forget to release it
+		out->numNodes = arrLength;
+    	// Don't forget to release it?
     	//(*persistentJNI)->ReleaseDoubleArrayElements(*arr, data, 0);
 
     }
@@ -1226,7 +1222,7 @@ td_env_t *get_java(const char *classpath, const char *javaClass) {
 	env->invoke0 = &td_java_invoke0;
 	env->invoke1 = &td_java_invoke1;
 	env->invoke2 = &td_java_invoke2;
-	env->getGraph0 = &td_java_getgraph0;
+	env->invokeGraph0 = &td_java_getgraph0;
 	//env->getGraph1 = &td_java_graph1;
 	//env->invoke3
 
