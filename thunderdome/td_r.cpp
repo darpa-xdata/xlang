@@ -52,6 +52,12 @@ static void to_td_val(td_val_t *out, SEXP v)
   {
     memcpy(&out->object, INTEGER(v), td_type_size(tag));
   }
+  else if (tag == TD_ARRAY)
+  {
+    out->tag = TD_OBJECT;
+    out->owner = td_env_r(NULL, NULL);
+    out->object = v;
+  }
   else 
   {
     throw("td_val_t not supported for specified types");
@@ -76,6 +82,12 @@ static SEXP from_td_val(td_val_t *v)
   }
   else if ( tag == TD_ARRAY) 
   {
+    td_array_t *arr;
+    arr = (td_array_t *) td_dataptr(v);
+    if (arr->ndims > 2)
+    {
+      throw("Unsupported array dimension.");
+    }
     if (td_eltype(v) <= TD_UINT32) 
     {
       pv = Rf_allocVector(INTSXP, td_length(v));
@@ -84,9 +96,9 @@ static SEXP from_td_val(td_val_t *v)
     {
       pv = Rf_allocVector(REALSXP, td_length(v));
     }
-    else if (td_eltype(v) == TD_UTF8)
+    else 
     {
-      throw("Arrays of strings are not yet supported.");
+      throw("Unsupported type.");
     }
   }
   else 
