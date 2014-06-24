@@ -28,8 +28,14 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 type Graph
   names   :: Array{String}
-  sources :: Array{Int64} # source and dests are sorted and can be used to construct a CSC sparse matrix
+  sources :: Array{Int64} # source and dests are sorted and can be used to construct a CSC or CSR sparse matrix quickly
   dests   :: Array{Int64}
+end
+
+type CSR
+  names :: Array{String}
+  rowptr :: Array{Int64}
+  colidx :: Array{Int64}
 end
 
 Graph() = Graph((String)[],
@@ -181,6 +187,21 @@ function tldcluster(graph :: Graph)
   return Graph(tldnames, srcs, dests)
 end
 
+function CSR(g :: Graph)
+  previ = 0
+  for i = 1:length(g.sources)
+    if g.sources[i] != previ
+      if previ > 0
+        for j = previ:i
+          push!(rowptr, i) #NOTE: empty rows have the same idx as next row
+        end
+      end
+      previ = i
+    end
+  end
+  return CSR(graph.names, rowptr, dests)
+end
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------------------------------------------------------------
@@ -191,6 +212,7 @@ function main()
 
   # (1) Read and setup data structures
   g   = Graph("pld-index.gz", "pld-arc.gz")
+  CSR(g)
   #adj = sparse(g.sources, g.dests, ones(length(g.sources)))
   
   # (2) call analytics via TD
