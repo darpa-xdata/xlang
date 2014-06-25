@@ -1,15 +1,4 @@
 # The worst makefile in the world!
-
-JULIA_PATH = /Applications/Julia-0.2.1.app/Contents/Resources/julia/
-
-
-PYTHON_CFLAG = -I/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/include/python2.7 \
-               -I/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/lib/python2.7/site-packages/numpy/core/include
-PYTHON_LIBDIR = /Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/lib
-PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
-
-JAVA_PATH = $JAVA_HOME/lib
-
 # accomodate different platforms
 ARCH="win32"
 LIBTYPE="dll"
@@ -26,6 +15,18 @@ UNAME_S := $(shell uname -s)
     endif
 
 DEBUG = -g
+
+
+JULIA_PATH = /Users/aterrel/workspace/apps/julia/julia-dev
+JULIA_SHARED_LIB = $(JULIA_PATH)/usr/lib/libjulia.$(LIBTYPE)
+
+PYTHON_CFLAG = -I/Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/include/python2.7 \
+               -I/Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/lib/python2.7/site-packages/numpy/core/include
+PYTHON_LIBDIR = /Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/lib
+PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
+
+JAVA_PATH = $JAVA_HOME/lib
+
 
 # R parameters.
 R_PATH = $(shell R RHOME)
@@ -54,8 +55,8 @@ libtd.so: td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -shared -fPIC td.o td_ds.o -o $@ -ldl
 
 libtd_julia.so: td.h td_julia.c libtd.so
-	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/include/julia
-	$(CC) $(DEBUG) -shared -fPIC td_julia.o -o $@ $(JULIA_PATH)/usr/lib/libjulia.so ./libtd.so
+	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/include/julia -I$(JULIA_PATH)/usr/include
+	$(CC) $(DEBUG) -shared -fPIC td_julia.o -o $@ $(JULIA_SHARED_LIB) ./libtd.so
 
 libtd_r.so: td.h libtd.so
 	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
@@ -89,6 +90,7 @@ example_java_client_windows: example_client.c td.h td_java.c
 	$(CC) $(DEBUG) $< -o $@ ./libtd.so 
 
 ds_roundtrip: ds_roundtrip.c td.h
+	$(CC) $(DEBUG) $< -o$@ ./libtd.so
 
 libtd_python.so: td.h td_python.c libtd.so
 	$(CC) $(DEBUG) -fPIC -c td_python.c -o td_python.o $(PYTHON_CFLAG)
