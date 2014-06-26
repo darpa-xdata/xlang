@@ -121,7 +121,7 @@ td_env_t *td_env_python(char *plugin_path, char *python_path)
 
     if (cached_python_env == NULL) {
         snprintf(path, sizeof(path), "%s%s%s%s",
-                 plugin_path, PATHSEPSTRING, "libtd_python", ".so"); //SHLIB_EXT);
+                 plugin_path, PATHSEPSTRING, "libtd_python", SHLIB_EXT);//".so"); //SHLIB_EXT);
         void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
         if (h == NULL) {
             fprintf(stderr, "%s\n", dlerror());
