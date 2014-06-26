@@ -11,8 +11,9 @@ int main(int argc, char *argv[])
 {
 #ifdef TD_HAS_JULIA
     // start julia
-    td_env_t *jl = td_env_julia(".",
-                                "/Applications/Julia-0.2.1.app/Contents/Resources/julia/bin");
+
+    td_env_t *jl = td_env_julia(".", TD_JULIA_BIN);
+
 
 
     // call "sin" with one scalar argument
@@ -34,8 +35,7 @@ int main(int argc, char *argv[])
 
 #ifdef TD_HAS_PYTHON
     td_val_t out_py;
-    td_env_t *py = td_env_python(".",
-                                 "/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/bin/python");
+    td_env_t *py = td_env_python(".", TD_PYTHON_EXE);
     py->invoke0(&out_py, "int");
     printf("int() = %d\n", td_int32(&out_py));
 

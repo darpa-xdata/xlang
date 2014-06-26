@@ -17,13 +17,15 @@ UNAME_S := $(shell uname -s)
 DEBUG = -g
 
 
-JULIA_PATH = /Users/aterrel/workspace/apps/julia/julia-dev
+JULIA_BIN = $(shell dirname `which julia`)
+JULIA_PATH = $(JULIA_BIN)/../..
 JULIA_SHARED_LIB = $(JULIA_PATH)/usr/lib/libjulia.$(LIBTYPE)
 
-PYTHON_CFLAG = -I/Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/include/python2.7 \
-               -I/Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/lib/python2.7/site-packages/numpy/core/include
-PYTHON_LIBDIR = /Users/aterrel/workspace/apps/anaconda/miniconda-3.5.5/lib
-PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) -lpython
+PYTHON_EXE = $(shell python-config --exec-prefix)/bin/python
+PYTHON_CFLAG = $(shell python-config --cflags) \
+               -I$(shell python -c "import numpy; print(numpy.get_include())")
+PYTHON_LIBDIR = $(shell python-config --prefix)/lib
+PYTHON_LDFLAG =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) $(shell python-config --ldflags)
 
 JAVA_PATH = $JAVA_HOME/lib
 
@@ -81,7 +83,7 @@ $(LIBTD_JAVA): td.h td_java.c $(LIBTD)
 	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/$(SERVER_DIR)/libjvm.$(LIBTYPE) ./$(LIBTD)
 
 example_client: example_client.c td.h $(LIBTD_JULIA) $(LIBTD_PYTHON)
-	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_HAS_JULIA=1 $< -o $@ ./$(LIBTD)
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_PYTHON_EXE="\"$(PYTHON_EXE)\"" -DTD_HAS_JULIA=1 -DTD_JULIA_BIN="\"$(JULIA_BIN)\"" $< -o $@ ./$(LIBTD)
 
 # remember to do ant first or point to a valid classpath
 # mac or linux, maybe win32
