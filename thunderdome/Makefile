@@ -25,7 +25,8 @@ JULIA_LDFLAGS = -L$(JULIA_LIBDIR) -Wl,-rpath -Wl,$(JULIA_LIBDIR) -ljulia
 
 PYTHON_EXE = $(shell python-config --exec-prefix)/bin/python
 PYTHON_CFLAGS = $(shell python-config --cflags) \
-               -I$(shell python -c "import numpy; print(numpy.get_include())")
+               -I$(shell python -c "import numpy; print(numpy.get_include())") \
+               -I$(shell python -c "import numpy; print(numpy.get_numarray_include())")
 PYTHON_LIBDIR = $(shell python-config --prefix)/lib
 PYTHON_LDFLAGS =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) $(shell python-config --ldflags)
 
