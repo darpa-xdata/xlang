@@ -121,7 +121,7 @@ td_env_t *td_env_python(char *plugin_path, char *python_path)
 
     if (cached_python_env == NULL) {
         snprintf(path, sizeof(path), "%s%s%s%s",
-                 plugin_path, PATHSEPSTRING, "libtd_python", ".so"); //SHLIB_EXT);
+                 plugin_path, PATHSEPSTRING, "libtd_python", SHLIB_EXT);//".so"); //SHLIB_EXT);
         void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
         if (h == NULL) {
             fprintf(stderr, "%s\n", dlerror());
@@ -142,6 +142,7 @@ void td_provide_python(td_env_t *e)
 
 static td_env_t *cached_java_env=NULL;
 
+// looks for libtd_java .so or .dll or .dylib - could be smarter about that.
 td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
 {
     char path[512];
@@ -149,10 +150,13 @@ td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
     if (cached_java_env == NULL) {
         snprintf(path, sizeof(path), "%s%s%s%s",
                  plugin_path, PATHSEPSTRING, "libtd_java", ".so"); //SHLIB_EXT);
-      //  printf("looking for lib at %s\n", path);
+        //printf("looking for lib at %s\n", path);
         void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
         if (h == NULL) {
         	h = dlopen("libtd_java.dll", RTLD_GLOBAL | RTLD_NOW);
+        }
+        if (h == NULL) {
+        	h = dlopen("libtd_java.dylib", RTLD_GLOBAL | RTLD_NOW);
         }
         if (h == NULL) {
         	fprintf(stderr, "%s\n", dlerror());
@@ -160,6 +164,7 @@ td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
         }
         void (*init)(char*,char*) = dlsym(h, "td_java_init");
         init(classpath, java_path);
+
         assert(cached_java_env);
     }
 

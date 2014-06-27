@@ -11,14 +11,15 @@ int main(int argc, char *argv[])
 {
 #ifdef TD_HAS_JULIA
     // start julia
-    td_env_t *jl = td_env_julia(".",
-                                "/Applications/Julia-0.2.1.app/Contents/Resources/julia/bin");
+
+    td_env_t *jl = td_env_julia(".", TD_JULIA_BIN);
+
 
 
     // call "sin" with one scalar argument
-    td_val_t arg = { .tag = TD_DOUBLE, .double_val = 3.14 };
+    td_val_t arg_jl = { .tag = TD_DOUBLE, .double_val = 3.14 };
     td_val_t out;
-    jl->invoke1(&out, "sin", &arg);
+    jl->invoke1(&out, "sin", &arg_jl);
 
     printf("sin(3.14) = %g\n", td_double(&out));
 
@@ -34,14 +35,13 @@ int main(int argc, char *argv[])
 
 #ifdef TD_HAS_PYTHON
     td_val_t out_py;
-    td_env_t *py = td_env_python(".",
-                                 "/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/bin/python");
+    td_env_t *py = td_env_python(".", TD_PYTHON_EXE);
     py->invoke0(&out_py, "int");
     printf("int() = %d\n", td_int32(&out_py));
 
-    td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+    td_val_t arg_py = { .tag = TD_INT32, .int32_val = 2 };
 
-    py->invoke1(&out_py, "int", &arg);
+    py->invoke1(&out_py, "int", &arg_py);
     printf("int(2) = %d\n", td_int32(&out_py));
 #endif
 
@@ -135,21 +135,21 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "nextDouble");
     printf("nextDouble() = %f\n", td_double(&out_java));
 
-    arg.tag = TD_INT32; arg.double_val = 4;
-    java_env->invoke1(&out_java, "sqr", &arg);
+    td_val_t arg_java = { TD_INT32, 4 };
+    java_env->invoke1(&out_java, "sqr", &arg_java);
     printf("sqr(2) = %d\n", td_int32(&out_java));
 
-    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
-    java_env->invoke1(&out_java, "sin", &arg);
+    arg_java.tag = TD_DOUBLE; arg_java.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sin", &arg_java);
     printf("sin(%f) = %f\n", arg.double_val, td_double(&out_java));
 
-    arg.tag = TD_INT32; arg.int32_val = 4;
-    java_env->invoke1(&out_java, "isEven", &arg);
+    arg_java.tag = TD_INT32; arg.int32_val = 4;
+    java_env->invoke1(&out_java, "isEven", &arg_java);
     printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
 
-    arg.tag = TD_INT32; arg.int32_val = 3;
-    java_env->invoke1(&out_java, "isEven", &arg);
-    printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
+    arg_java.tag = TD_INT32; arg_java.int32_val = 3;
+    java_env->invoke1(&out_java, "isEven", &arg_java);
+    printf("isEven(%d) = %d\n", arg_java.int32_val, td_uint32(&out_java));
 
     // error test cases -------------------------------------------
 
@@ -158,9 +158,9 @@ int main(int argc, char *argv[])
     printf("unknownMethod() = %f\n", td_double(&out_java));
 
     // another error case - no sqr that takes a double
-    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
-    java_env->invoke1(&out_java, "sqr", &arg);
-    printf("sqr(%f) = %f\n", arg.double_val, td_double(&out_java));
+    arg_java.tag = TD_DOUBLE; arg_java.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sqr", &arg_java);
+    printf("sqr(%f) = %f\n", arg_java.double_val, td_double(&out_java));
 #endif
 
     return 0;

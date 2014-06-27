@@ -1086,6 +1086,10 @@ void td_java_invoke2(td_val_t *out, char *fname, td_val_t *arg, td_val_t *second
 	(*persistentJNI)->DeleteLocalRef(persistentJNI,returnTypeMethod);
 }
 
+// Partially implemented - grabs the node names from the graph object.
+// doesn't yet grab the row values or the col offsets of the CSR format
+// this assumes the graph begins on the java side -- if we it begins in julia, for instance,
+// we'll need to pass that in, without copying
 void td_java_getgraph0(graph_t *out, char *fname)
 {
 	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
@@ -1130,15 +1134,9 @@ void td_java_getgraph0(graph_t *out, char *fname)
     	printf("ERROR expecting a graph as a return value instead of %s\n",  returnString);
     }
 
-	//jmethodID midMain = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "()Lxlang/java/Graph;");
-
-
 	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI,string, returnString);
 	(*persistentJNI)->DeleteLocalRef(persistentJNI,string);
-
-	//printf ("called Xlang method %s\n",fname);
 }
-
 
 void td_java_eval(td_val_t *out, char *str)
 {
@@ -1189,7 +1187,7 @@ size_t td_java_get_ndims(void *v)
 void td_java_init(const char *classpath, const char *javaClass)
 {
     td_env_t *env = get_java(classpath, javaClass);
-    td_provide_java(env);
+   td_provide_java(env);
 }
 
 //! get or make the java environment
@@ -1234,6 +1232,7 @@ td_env_t *get_java(const char *classpath, const char *javaClass) {
 	// env->get_dataptr = &td_java_get_dataptr;
 	//env->get_length = &td_java_get_length;
 	//env->get_ndims = &td_java_get_ndims;
+	//printf(" returning env!\n");
 
 	return env;
 }
