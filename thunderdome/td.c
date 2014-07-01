@@ -121,7 +121,7 @@ td_env_t *td_env_python(char *plugin_path, char *python_path)
 
     if (cached_python_env == NULL) {
         snprintf(path, sizeof(path), "%s%s%s%s",
-                 plugin_path, PATHSEPSTRING, "libtd_python", ".so"); //SHLIB_EXT);
+                 plugin_path, PATHSEPSTRING, "libtd_python", SHLIB_EXT);//".so"); //SHLIB_EXT);
         void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
         if (h == NULL) {
             fprintf(stderr, "%s\n", dlerror());
@@ -142,6 +142,7 @@ void td_provide_python(td_env_t *e)
 
 static td_env_t *cached_java_env=NULL;
 
+// looks for libtd_java .so or .dll or .dylib - could be smarter about that.
 td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
 {
     char path[512];
@@ -149,17 +150,24 @@ td_env_t *td_env_java(char *plugin_path, char *classpath, char *java_path)
     if (cached_java_env == NULL) {
         snprintf(path, sizeof(path), "%s%s%s%s",
                  plugin_path, PATHSEPSTRING, "libtd_java", ".so"); //SHLIB_EXT);
-      //  printf("looking for lib at %s\n", path);
+        printf("looking for lib at %s\n", path);
         void *h = dlopen(path, RTLD_GLOBAL | RTLD_NOW);
         if (h == NULL) {
+        	fprintf(stderr, "%s\n", dlerror());
         	h = dlopen("libtd_java.dll", RTLD_GLOBAL | RTLD_NOW);
         }
         if (h == NULL) {
         	fprintf(stderr, "%s\n", dlerror());
-        	td_error("could not load libjava\n");
+        	h = dlopen("libtd_java.dylib", RTLD_GLOBAL | RTLD_NOW);
+        }
+        if (h == NULL) {
+        	fprintf(stderr, "%s\n", dlerror());
+        	td_error("could not load libjava - did you set LD_LIBRARY_PATH to include the libjvm location?\n");
+        	td_error("for instance something like : .:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server/\n");
         }
         void (*init)(char*,char*) = dlsym(h, "td_java_init");
         init(classpath, java_path);
+
         assert(cached_java_env);
     }
 

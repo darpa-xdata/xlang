@@ -18,6 +18,8 @@
 
     <path id="xlang.classpath">
         <pathelement location="test-classes"/>
+        <pathelement location="lib/la4j-0.4.9.jar"/>
+        <pathelement location="lib/commons-lang3-3.3.2.jar"/>
     </path>
 
     <target name="init" depends="clean">
@@ -26,6 +28,7 @@
 
     <target name="clean" >
         <delete dir="test-classes"/>
+        <delete dir="out"/>
     </target>
 
     <target depends="init" name="javac">

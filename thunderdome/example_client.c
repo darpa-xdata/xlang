@@ -4,21 +4,22 @@
 #include "td.h"
 
 // this is the class that's called below... change it to use something else...
-#define MAIN_CLASS "xlang/java/Xlang"
+#define MAIN_CLASS "xlang/java/GraphAlgorithms"
 
 // for java, first argument can be a classpath
 int main(int argc, char *argv[])
 {
 #ifdef TD_HAS_JULIA
     // start julia
-    td_env_t *jl = td_env_julia(".",
-                                "/Applications/Julia-0.2.1.app/Contents/Resources/julia/bin");
+
+    td_env_t *jl = td_env_julia(".", TD_JULIA_BIN);
+
 
 
     // call "sin" with one scalar argument
-    td_val_t arg = { .tag = TD_DOUBLE, .double_val = 3.14 };
+    td_val_t arg_jl = { .tag = TD_DOUBLE, .double_val = 3.14 };
     td_val_t out;
-    jl->invoke1(&out, "sin", &arg);
+    jl->invoke1(&out, "sin", &arg_jl);
 
     printf("sin(3.14) = %g\n", td_double(&out));
 
@@ -34,14 +35,13 @@ int main(int argc, char *argv[])
 
 #ifdef TD_HAS_PYTHON
     td_val_t out_py;
-    td_env_t *py = td_env_python(".",
-                                 "/Users/aterrel/workspace/opt/apps/anaconda/anaconda-1.9.1/anaconda/bin/python");
+    td_env_t *py = td_env_python(".", TD_PYTHON_EXE);
     py->invoke0(&out_py, "int");
     printf("int() = %d\n", td_int32(&out_py));
 
-    td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
+    td_val_t arg_py = { .tag = TD_INT32, .int32_val = 2 };
 
-    py->invoke1(&out_py, "int", &arg);
+    py->invoke1(&out_py, "int", &arg_py);
     printf("int(2) = %d\n", td_int32(&out_py));
 #endif
 
@@ -49,13 +49,83 @@ int main(int argc, char *argv[])
 
     td_val_t out_java;
 
-    char *classpath = "out";
+    // modify as you pull in more jars
+    char *classpath = "out:lib/la4j-0.4.9.jar:lib/commons-lang3-3.3.2.jar";
     if (argc == 2) {
     	classpath = argv[1];
     }
-    td_env_t *java_env = td_env_java(".",classpath,MAIN_CLASS);
+    td_env_t *java_env = td_env_java(".",classpath, MAIN_CLASS);
 
     // tests!
+
+    java_env->invoke0(&out_java, "nextInt");
+    printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
+
+    graph_t out_graph;
+    java_env->invokeGraph0(&out_graph, "getExampleGraph");
+    printf("getExampleGraph() = %d \n", out_graph.numNodes);
+
+    if (1) return 0;
+
+    td_string_t str;
+    str.length = 7;
+    str.data = "Bueller";
+
+    td_val_t arg;
+    arg.tag = TD_UTF8; arg.object = &str;
+    java_env->invoke1(&out_java, "strLen", &arg);
+    printf("strLen(%s) = %d\n", (char *)((td_string_t *)arg.object)->data, td_int32(&out_java));
+
+    arg.tag = TD_UTF8; arg.object = &str;
+    java_env->invoke1(&out_java, "toUpper", &arg);
+    printf("toUpper(%s) = %s\n", (char *)((td_string_t *)arg.object)->data, (char *)((td_string_t *)out_java.object)->data);
+
+    td_array_t arr;
+    arr.eltype = TD_UTF8;
+    arr.length = 3;
+
+    td_string_t str1 = { "one",3};
+    td_string_t str2 = { "two",3};
+    td_string_t str3 = { "three",5};
+    //char * words[3] = {"one","two","three"};
+    td_string_t * words[3] = {&str1,&str2,&str3};
+    arr.data = words;
+    arg.tag = TD_ARRAY; arg.object = &arr;
+    java_env->invoke1(&out_java, "howManyArr", &arg);
+    printf("howManyArr = %d\n",  td_int32(&out_java));
+
+
+    td_array_t arr2;
+    arr2.eltype = TD_UTF8;
+    arr2.length = 0;
+
+//    arr.data = words;
+    td_val_t arg2;
+
+    arg2.tag = TD_ARRAY; arg2.object = &arr;
+    java_env->invoke2(&out_java, "toUpperInOut", &arg, &arg2);
+    printf("toUpperInOut \n");
+
+    if (1) return 0;
+
+    // sum ints
+   // td_array_t arr;
+    arr.eltype = TD_INT32;
+    arr.length = 3;
+    int nums[3] = {1,2,3};
+    arr.data = &nums;
+    arg.tag = TD_ARRAY; arg.object = &arr;
+    java_env->invoke1(&out_java, "sumArr", &arg);
+    printf("sum = %d\n",  td_int32(&out_java));
+
+    // sum doubles
+    double dnums[3] = {3.14,3.14,3.14};
+    arr.eltype = TD_DOUBLE;
+    arr.data = &dnums;
+    arg.tag = TD_ARRAY; arg.object = &arr;
+    java_env->invoke1(&out_java, "sumDoubleArr", &arg);
+    printf("sum = %f\n",  td_double(&out_java));
+
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
@@ -65,24 +135,21 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "nextDouble");
     printf("nextDouble() = %f\n", td_double(&out_java));
 
-
-   // td_val_t arg = { .tag = TD_INT32, .int32_val = 2 };
-
-    td_val_t arg = { TD_INT32, 4 };
-    java_env->invoke1(&out_java, "sqr", &arg);
+    td_val_t arg_java = { TD_INT32, 4 };
+    java_env->invoke1(&out_java, "sqr", &arg_java);
     printf("sqr(2) = %d\n", td_int32(&out_java));
 
-    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
-    java_env->invoke1(&out_java, "sin", &arg);
+    arg_java.tag = TD_DOUBLE; arg_java.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sin", &arg_java);
     printf("sin(%f) = %f\n", arg.double_val, td_double(&out_java));
 
-    arg.tag = TD_INT32; arg.int32_val = 4;
-    java_env->invoke1(&out_java, "isEven", &arg);
+    arg_java.tag = TD_INT32; arg.int32_val = 4;
+    java_env->invoke1(&out_java, "isEven", &arg_java);
     printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
 
-    arg.tag = TD_INT32; arg.int32_val = 3;
-    java_env->invoke1(&out_java, "isEven", &arg);
-    printf("isEven(%d) = %d\n", arg.int32_val, td_uint32(&out_java));
+    arg_java.tag = TD_INT32; arg_java.int32_val = 3;
+    java_env->invoke1(&out_java, "isEven", &arg_java);
+    printf("isEven(%d) = %d\n", arg_java.int32_val, td_uint32(&out_java));
 
     // error test cases -------------------------------------------
 
@@ -91,9 +158,9 @@ int main(int argc, char *argv[])
     printf("unknownMethod() = %f\n", td_double(&out_java));
 
     // another error case - no sqr that takes a double
-    arg.tag = TD_DOUBLE; arg.double_val = 3.14159/2;
-    java_env->invoke1(&out_java, "sqr", &arg);
-    printf("sqr(%f) = %f\n", arg.double_val, td_double(&out_java));
+    arg_java.tag = TD_DOUBLE; arg_java.double_val = 3.14159/2;
+    java_env->invoke1(&out_java, "sqr", &arg_java);
+    printf("sqr(%f) = %f\n", arg_java.double_val, td_double(&out_java));
 #endif
 
     return 0;
