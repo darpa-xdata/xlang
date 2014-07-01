@@ -22,10 +22,11 @@ setMethod("%*%", signature(x="dgRMatrix", y="dgeMatrix"),
   }
 )
 
-a <- make_csr_matrix()
+m <- make_csr_matrix()
 
 clusters_from_proj_nodes <- function(proj_nodes) {
-  temp <- apply(proj_nodes, 1, function(x) sum(2^as.numeric(x > 0)))
+  temp <- apply(proj_nodes, 1, 
+              function(x) sum(as.numeric(x > 0)*2^(1:ncol(proj_nodes))))
   us <- unique(sort(temp))
   ret <- temp
   for (i in 1:length(us))
@@ -34,8 +35,10 @@ clusters_from_proj_nodes <- function(proj_nodes) {
 }
 
 # Return the elements of the kth cluster
-fielder_cluster <- function(m, k, perc=0.8) {
+fielder_cluster <- function(m, k) {
   irlb_fit <- irlba(m, nu=k, nv=k)
   proj_nodes <- (m %*% irlb_fit$v)
   clusters_from_proj_nodes(proj_nodes)
 }
+
+fielder_cluster(a, 2)
