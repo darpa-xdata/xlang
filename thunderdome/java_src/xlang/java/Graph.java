@@ -12,7 +12,7 @@ import java.util.List;
 /**
 * Created by go22670 on 6/19/14.
 */
-class Graph {
+public class Graph {
   private String[] nodeNames;
   private double[] values;
   private int [] rowIndex;

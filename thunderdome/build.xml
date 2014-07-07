@@ -20,6 +20,10 @@
         <pathelement location="test-classes"/>
         <pathelement location="lib/la4j-0.4.9.jar"/>
         <pathelement location="lib/commons-lang3-3.3.2.jar"/>
+
+        <pathelement location="lib/scala-library-2.10.3.jar"/>
+        <pathelement location="lib/CommunityDetectionJar-bin.jar"/>
+        <pathelement location="lib/runtime_2.10.jar"/>
     </path>
 
     <target name="init" depends="clean">

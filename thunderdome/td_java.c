@@ -1086,6 +1086,87 @@ void td_java_invoke2(td_val_t *out, char *fname, td_val_t *arg, td_val_t *second
 	(*persistentJNI)->DeleteLocalRef(persistentJNI,returnTypeMethod);
 }
 
+void copyGraph(jobject graph, JNIEnv* persistentJNI, graph_t* out) {
+	// Get the class
+	jclass mvclass = (*persistentJNI)->GetObjectClass(persistentJNI, graph);
+	// Get method ID for method getSomeDoubleArray that returns a double array
+	// copy the node names
+	jmethodID mid = (*persistentJNI)->GetMethodID(persistentJNI, mvclass,
+			"getNodeNames", "()[Ljava/lang/String;");
+	// Call the method, returns JObject (because Array is instance of Object)
+	jobjectArray arr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph,
+			mid);
+	// Get the elements (you probably have to fetch the length of the array as well
+	int i = 0;
+	jsize arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, arr);
+	//		printf("got node name array length %d\n",arrLength);
+	out->numNodes = arrLength;
+	out->nodeNames = malloc(arrLength * sizeof(char*));
+	for (; i < arrLength; i++) {
+		jobject data = (*persistentJNI)->GetObjectArrayElement(persistentJNI,
+				arr, i);
+		char* nodeName = getStringSimple((jstring) data);
+		//printf("got node name %s\n",nodeName);
+		out->nodeNames[i] = nodeName;
+	}
+	// Don't forget to release it?
+	//(*persistentJNI)->ReleaseDoubleArrayElements(*arr, data, 0);
+	// copy the values array
+	jmethodID values = (*persistentJNI)->GetMethodID(persistentJNI, mvclass,
+			"getValues", "()[D");
+	jdoubleArray valuesArr = (*persistentJNI)->CallObjectMethod(persistentJNI,
+			graph, values);
+	i = 0;
+	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, valuesArr);
+	out->numValues = arrLength;
+	out->values = malloc(arrLength * sizeof(double));
+	jboolean isCopy1;
+	jdouble* srcArrayElems = (*persistentJNI)->GetDoubleArrayElements(
+			persistentJNI, valuesArr, &isCopy1);
+	for (; i < arrLength; i++) {
+		out->values[i] = srcArrayElems[i];
+	}
+	if (isCopy1 == JNI_TRUE) {
+		(*persistentJNI)->ReleaseDoubleArrayElements(persistentJNI, valuesArr,
+				srcArrayElems, JNI_ABORT);
+	}
+	// copy the row offsets array
+	jmethodID rowIndex = (*persistentJNI)->GetMethodID(persistentJNI, mvclass,
+			"getRowIndex", "()[I");
+	jintArray rowIndexArr = (*persistentJNI)->CallObjectMethod(persistentJNI,
+			graph, rowIndex);
+	i = 0;
+	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, rowIndexArr);
+	out->numRowPtrs = arrLength;
+	out->rowValueOffsets = malloc(arrLength * sizeof(int));
+	jint* srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(
+			persistentJNI, rowIndexArr, &isCopy1);
+	for (; i < arrLength; i++) {
+		out->rowValueOffsets[i] = srcArrayElemsInt[i];
+	}
+	if (isCopy1 == JNI_TRUE) {
+		(*persistentJNI)->ReleaseIntArrayElements(persistentJNI, rowIndexArr,
+				srcArrayElemsInt, JNI_ABORT);
+	}
+	// copy the col offsets array
+	jmethodID colIndex = (*persistentJNI)->GetMethodID(persistentJNI, mvclass,
+			"getColIndex", "()[I");
+	jintArray colIndexArr = (*persistentJNI)->CallObjectMethod(persistentJNI,
+			graph, colIndex);
+	i = 0;
+	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, colIndexArr);
+	out->colOffsets = malloc(out->numValues * sizeof(int));
+	srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(persistentJNI,
+			colIndexArr, &isCopy1);
+	for (; i < arrLength; i++) {
+		out->colOffsets[i] = srcArrayElemsInt[i];
+	}
+	if (isCopy1 == JNI_TRUE) {
+		(*persistentJNI)->ReleaseIntArrayElements(persistentJNI, colIndexArr,
+				srcArrayElemsInt, JNI_ABORT);
+	}
+}
+
 // Partially implemented - grabs the node names from the graph object.
 // doesn't yet grab the row values or the col offsets of the CSR format
 // this assumes the graph begins on the java side -- if we it begins in julia, for instance,
@@ -1110,92 +1191,35 @@ void td_java_getgraph0(graph_t *out, char *fname)
     	jobject graph = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, getGraph);
 
     	// Get the class
-    	jclass mvclass = (*persistentJNI)->GetObjectClass(persistentJNI,graph);
-    	// Get method ID for method getSomeDoubleArray that returns a double array
+		copyGraph(graph, persistentJNI, out);
+    }
+    else {
+    	printf("ERROR expecting a graph as a return value instead of %s\n",  returnString);
+    }
 
-    	// copy the node names
+	(*persistentJNI)->ReleaseStringUTFChars(persistentJNI,string, returnString);
+	(*persistentJNI)->DeleteLocalRef(persistentJNI,string);
+}
 
-    	jmethodID mid = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getNodeNames", "()[Ljava/lang/String;");
-    	// Call the method, returns JObject (because Array is instance of Object)
-    	jobjectArray arr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, mid);
-    	// Get the elements (you probably have to fetch the length of the array as well
-    	int i = 0;
-		jsize arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, arr);
-//		printf("got node name array length %d\n",arrLength);
+void td_java_getgraph1(graph_t *out, char *fname)
+{
+	jclass clsH = (*persistentJNI)->FindClass(persistentJNI, persistentClass);
+	if (clsH == NULL) {
+		printf("td_java_getgraph0 : can't find %s class?\n",persistentClass);
+		return;
+	}
 
-		out->numNodes = arrLength;
-		out->nodeNames = malloc(arrLength * sizeof(char*));
-		for (; i < arrLength; i++) {
-        	jobject data = (*persistentJNI)->GetObjectArrayElement(persistentJNI,arr, i);
-			char * nodeName = getStringSimple((jstring)data);
-			//printf("got node name %s\n",nodeName);
-			out->nodeNames[i] = nodeName;
-    	}
-    	// Don't forget to release it?
-    	//(*persistentJNI)->ReleaseDoubleArrayElements(*arr, data, 0);
+	jstring string = getReturnType(&fname, &clsH);
+    const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
 
+    printf("td_java_getgraph0 return type for %s is %s\n",fname,returnString);
 
-		// copy the values array
+	if (strcmp(returnString, XLANG_JAVA_GRAPH) == 0) {
+    	jmethodID getGraph = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "()Lxlang/java/Graph;");
+    	jobject graph = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, getGraph);
 
-    	jmethodID values = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getValues", "()[D");
-    	jdoubleArray valuesArr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, values);
-
-    	i = 0;
-		arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, valuesArr);
-
-		out->numValues = arrLength;
-		out->values = malloc(arrLength * sizeof(double));
-
-		jboolean isCopy1;
-		jdouble* srcArrayElems = (*persistentJNI)->GetDoubleArrayElements(persistentJNI,valuesArr, &isCopy1);
-		for (; i < arrLength; i++) {
-			out->values[i] = srcArrayElems[i];
-		}
-
-		if (isCopy1 == JNI_TRUE) {
-			(*persistentJNI)->ReleaseDoubleArrayElements(persistentJNI,valuesArr, srcArrayElems, JNI_ABORT);
-	    }
-
-		// copy the row offsets array
-
-    	jmethodID rowIndex = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getRowIndex", "()[I");
-    	jintArray rowIndexArr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, rowIndex);
-
-    	i = 0;
-		arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, rowIndexArr);
-
-		out->numRowPtrs = arrLength;
-		out->rowValueOffsets = malloc(arrLength * sizeof(int));
-
-		jint* srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(persistentJNI,rowIndexArr, &isCopy1);
-		for (; i < arrLength; i++) {
-			out->rowValueOffsets[i] = srcArrayElemsInt[i];
-		}
-
-		if (isCopy1 == JNI_TRUE) {
-			(*persistentJNI)->ReleaseIntArrayElements(persistentJNI,rowIndexArr, srcArrayElemsInt, JNI_ABORT);
-	    }
-
-		// copy the col offsets array
-
-    	jmethodID colIndex = (*persistentJNI)->GetMethodID(persistentJNI, mvclass, "getColIndex", "()[I");
-    	jintArray colIndexArr = (*persistentJNI)->CallObjectMethod(persistentJNI, graph, colIndex);
-
-    	i = 0;
-		arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, colIndexArr);
-
-		out->colOffsets = malloc(out->numValues * sizeof(int));
-
-		srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(persistentJNI,colIndexArr, &isCopy1);
-		for (; i < arrLength; i++) {
-			out->colOffsets[i] = srcArrayElemsInt[i];
-		}
-
-		if (isCopy1 == JNI_TRUE) {
-			(*persistentJNI)->ReleaseIntArrayElements(persistentJNI,colIndexArr, srcArrayElemsInt, JNI_ABORT);
-	    }
-
-
+    	// Get the class
+		copyGraph(graph, persistentJNI, out);
     }
     else {
     	printf("ERROR expecting a graph as a return value instead of %s\n",  returnString);

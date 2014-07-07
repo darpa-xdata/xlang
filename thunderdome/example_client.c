@@ -70,13 +70,20 @@ int main(int argc, char *argv[])
 
     // modify as you pull in more jars
     char *classpath = "out:lib/la4j-0.4.9.jar:lib/commons-lang3-3.3.2.jar";
-    if (argc == 2) {
+    printf("num %d\n",argc);
+    if (argc >= 2) {
     	classpath = argv[1];
+
     }
-    td_env_t *java_env = td_env_java(".",classpath, MAIN_CLASS);
+    char *classToUse = MAIN_CLASS;
+    if (argc >= 3) {
+    	classToUse = argv[2];
+    }
+    td_env_t *java_env = td_env_java(".",classpath, classToUse);
 
     // tests!
 
+    if (0) {
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
@@ -86,6 +93,10 @@ int main(int argc, char *argv[])
 	printGraph(&out_graph);
 
     java_env->invokeGraph0(&out_graph, "getExampleGraph2");
+	printGraph(&out_graph);
+    }
+
+    java_env->invokeGraph0(&out_graph, "communityDetection");
 	printGraph(&out_graph);
 
     if (1) return 0;
