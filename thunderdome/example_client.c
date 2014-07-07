@@ -6,6 +6,25 @@
 // this is the class that's called below... change it to use something else...
 #define MAIN_CLASS "xlang/java/GraphAlgorithms"
 
+void printGraph(graph_t* out_graph) {
+	printf("getExampleGraph() = nodes %d \n", out_graph->numNodes);
+	int i = 0;
+	printf("[");
+	for (i = 0; i < out_graph->numNodes; i++)
+		printf("%s,", out_graph->nodeNames[i]);
+	printf("]\n[");
+	for (i = 0; i < out_graph->numValues; i++)
+		printf("%f,", out_graph->values[i]);
+	printf("]\n[");
+	for (i = 0; i < out_graph->numRowPtrs; i++)
+		printf("%d,", out_graph->rowValueOffsets[i]);
+	printf("]\n[");
+	for (i = 0; i < out_graph->numNodes; i++)
+		printf("%d,", out_graph->colOffsets[i]);
+	printf("]\n");
+
+}
+
 // for java, first argument can be a classpath
 int main(int argc, char *argv[])
 {
@@ -61,15 +80,13 @@ int main(int argc, char *argv[])
     java_env->invoke0(&out_java, "nextInt");
     printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
+    // compare these with GraphAlgorithms.main output
     graph_t out_graph;
     java_env->invokeGraph0(&out_graph, "getExampleGraph");
-    printf("getExampleGraph() = nodes %d \n", out_graph.numNodes);
-    int i = 0;
-    for (i = 0;i<out_graph.numNodes;i++)  printf("getExampleGraph() = node  %d %s\n", i,out_graph.nodeNames[i]);
-    for (i = 0;i<out_graph.numValues;i++) printf("getExampleGraph() = value %d %f\n", i,out_graph.values[i]);
-    for (i = 0;i<out_graph.numRowPtrs;i++) printf("getExampleGraph() = row %d %d\n", i,out_graph.rowValueOffsets[i]);
-    for (i = 0;i<out_graph.numNodes;i++) printf("getExampleGraph() = col %d %d\n", i,out_graph.colOffsets[i]);
-    //printf("getExampleGraph() = nodes %d \n", out_graph.numNodes);
+	printGraph(&out_graph);
+
+    java_env->invokeGraph0(&out_graph, "getExampleGraph2");
+	printGraph(&out_graph);
 
     if (1) return 0;
 
