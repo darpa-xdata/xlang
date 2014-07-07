@@ -62,6 +62,43 @@ public class GraphAlgorithms  {
     return graph;
   }
 
+  public static Graph getExampleGraphWithArg(double k) {
+    Basic2DMatrix matrix = new Basic2DMatrix(4, 4);    // not really needed
+    int i = 0;
+    matrix.setRow(i++, new BasicVector(new double[]{0, 0, 0, 0}));
+    matrix.setRow(i++, new BasicVector(new double[]{5, 8, 0, 0}));
+    matrix.setRow(i++, new BasicVector(new double[]{0, 0, 3, 0}));
+    matrix.setRow(i++, new BasicVector(new double[]{0, 6, 0, 0}));
+
+    matrix.multiply(k);
+    String[] nodeNames = {"one", "two", "three", "four"};
+
+    Graph graph = new Graph(nodeNames, matrix);
+    System.out.println("example " + graph);
+
+    return graph;
+  }
+
+  public static Graph echo(Graph g) {
+    return g;
+  }
+
+  /**
+   * Stand in for community detection
+   * @param g
+   * @param k
+   * @return
+   */
+  public static Graph scale(Graph g, double k) {
+    double[] values = g.getValues();
+    double[] copy = new double[values.length];
+    System.arraycopy(values, 0, copy, 0, values.length);
+    for (int i = 0; i < copy.length; i++) {
+      copy[i] *= k;
+    }
+    return new Graph(g.getNodeNames(),copy,g.getRowIndex(),g.getColIndex());
+  }
+
   public static Graph getExampleGraph2() {
     int n = 6;
     Basic2DMatrix matrix = new Basic2DMatrix(n, n);    // not really needed

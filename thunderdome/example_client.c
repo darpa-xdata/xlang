@@ -63,7 +63,13 @@ int main(int argc, char *argv[])
 
     graph_t out_graph;
     java_env->invokeGraph0(&out_graph, "getExampleGraph");
-    printf("getExampleGraph() = %d \n", out_graph.numNodes);
+    printf("getExampleGraph() = nodes %d \n", out_graph.numNodes);
+    int i = 0;
+    for (i = 0;i<out_graph.numNodes;i++)  printf("getExampleGraph() = node  %d %s\n", i,out_graph.nodeNames[i]);
+    for (i = 0;i<out_graph.numValues;i++) printf("getExampleGraph() = value %d %f\n", i,out_graph.values[i]);
+    for (i = 0;i<out_graph.numRowPtrs;i++) printf("getExampleGraph() = row %d %d\n", i,out_graph.rowValueOffsets[i]);
+    for (i = 0;i<out_graph.numNodes;i++) printf("getExampleGraph() = col %d %d\n", i,out_graph.colOffsets[i]);
+    //printf("getExampleGraph() = nodes %d \n", out_graph.numNodes);
 
     if (1) return 0;
 
