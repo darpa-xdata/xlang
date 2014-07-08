@@ -13,11 +13,31 @@ import java.util.List;
 * Created by go22670 on 6/19/14.
 */
 public class Graph {
-  private String[] nodeNames;
+  private String[] nodeNames = new String[0];
   private double[] values;
   private int [] rowIndex;
   private int [] colIndex;
 
+  public Graph(int[] nodes, int[] edges) {
+    double[] values = new double[edges.length];
+    for (int j = 0; j < edges.length; j++) values[j] = 1;
+    String[] names = new String[nodes.length-1];
+    for (int j = 0; j < names.length; j++) names[j] = ""+j;
+
+    this.nodeNames = names;
+    this.values = values;
+    this.rowIndex = nodes;
+    this.colIndex = edges;
+  }
+
+
+  /**
+   * Make a graph with arbitrary node names.
+   * @param nodeNames
+   * @param values
+   * @param rowIndex
+   * @param colIndex
+   */
   public Graph(String[] nodeNames, double[] values, int[] rowIndex, int[] colIndex) {
     this.nodeNames = nodeNames;
     this.values = values;
@@ -55,8 +75,9 @@ public class Graph {
 
   // recover original matrix
   public double[][] toMatrix() {
-    double [][] matrix = new double[getNodeNames().length][getNodeNames().length];
-    for (int r = 0; r < getRowIndex().length-1;r++) {
+    int n = getRowIndex().length - 1;
+    double [][] matrix = new double[n][n];
+    for (int r = 0; r < n; r++) {
       int vs = getRowIndex()[r];
       int ve = getRowIndex()[r+1];
      // rowIndex[r];
@@ -88,22 +109,24 @@ public class Graph {
 
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("[");
-    for (String s : getNodeNames()) builder.append(s).append(",");
-    builder.append("],\n[");
+    if (getNodeNames().length > 1) {
+      builder.append("names [");
+      for (String s : getNodeNames()) builder.append(s).append(",");
+      builder.append("],\nvalues [");
+    }
+    else {
+      builder.append("values [");
+    }
 
     for (Double s : getValues()) builder.append(s).append(",");
-    builder.append("],\n[");
+    builder.append("],\nrow index [");
 
     for (Integer s : getRowIndex()) builder.append(s).append(",");
-    builder.append("],\n[");
+    builder.append("],\ncol index [");
 
     for (Integer s : getColIndex()) builder.append(s).append(",");
     builder.append("]");
 
     return builder.toString();
-
-    //for (String s : nodeNames) builder.append(nodeNames).append(",");
-    //return nodeNames + "\nvalues " + values + "\nrowIndex " +rowIndex + "\ncolIndex " +colIndex;
   }
 }

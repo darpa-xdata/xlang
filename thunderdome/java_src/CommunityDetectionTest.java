@@ -1,70 +1,46 @@
 import generated.scala.communitydetectionp.Tup2DeliteArrayIntDeliteArrayInt;
-import org.la4j.matrix.dense.Basic2DMatrix;
-import org.la4j.vector.dense.BasicVector;
 import xlang.java.Graph;
-
-import java.util.Arrays;
 
 public class CommunityDetectionTest {
   public static void main(String[] args) {
-    int[] nodes = {0, 2, 4};
+    int[] nodes = {0, 2, 4, 6};
     int[] edges = {1, 2, 0, 2, 0, 1};
     Tup2DeliteArrayIntDeliteArrayInt result = communityDetection(nodes, edges);
 
-    int[] resultNodes = result._1();
-    int[] resultEdges = result._2();
-
-    for (Integer n : resultNodes) System.out.println("node " + n);
-    for (Integer n : resultEdges) System.out.println("edge " + n);
-
-
-    Basic2DMatrix matrix = new Basic2DMatrix(3,3);
-    int i = 0;
-    matrix.setRow(i++, new BasicVector(new double[]{0, 1, 1}));
-    matrix.setRow(i++, new BasicVector(new double[]{1, 0, 1}));
-    matrix.setRow(i++, new BasicVector(new double[]{1, 1, 0}));
-
-    String[] objects = new String[]{"0", "2", "4"};
-
-    communityDetection(new Graph(objects,matrix));
-
+    // do equivalent with a graph object...
     testCD();
   }
 
   public static Graph testCD() {
-    Basic2DMatrix matrix = new Basic2DMatrix(3,3);
-    int i = 0;
-    matrix.setRow(i++, new BasicVector(new double[]{0, 1, 1}));
-    matrix.setRow(i++, new BasicVector(new double[]{1, 0, 1}));
-    matrix.setRow(i++, new BasicVector(new double[]{1, 1, 0}));
-
-    String[] objects = new String[]{"0", "2", "4"};
-
-    Graph graph = new Graph(objects, matrix);
-    System.out.println("graph " + graph);
-    communityDetection(graph);
-    return graph;
+    int[] nodes = {0, 2, 4, 6};
+    int[] edges = {1, 2, 0, 2, 0, 1};
+    Graph graph = new Graph(nodes, edges);
+    Graph outGraph = communityDetection(graph);
+    return outGraph;
   }
 
+  /**
+   * Assumes a set value for k, since we don't yet have an invokeGraph method that takes a graph and an argument
+   * @param graph
+   * @return
+   */
+  public static Graph communityDetection(Graph graph) {
+    System.out.println("communityDetection.in " + graph);
 
-  public static void communityDetection(Graph graph) {
     double k = 0.01;
 
-    graph.getNodeNames();
-    int [] nodes = new int[graph.getNodeNames().length];
-    int i = 0;
-    for (String name : graph.getNodeNames()) nodes[i++] =Integer.parseInt(name);
-    int [] edges = new int[graph.getValues().length];
-    for (i = 0; i < edges.length; i++) {
-      System.out.println(" i " + i + " val " + graph.getColIndex()[i]);
-    }
-    Tup2DeliteArrayIntDeliteArrayInt result = CommunityDetection.apply(nodes, graph.getColIndex(), k);
+    Tup2DeliteArrayIntDeliteArrayInt result = CommunityDetection.apply(graph.getRowIndex(), graph.getColIndex(), k);
 
     int[] resultNodes = result._1();
     int[] resultEdges = result._2();
 
-    for (Integer n : resultNodes) System.out.println("node " + n);
-    for (Integer n : resultEdges) System.out.println("edge " + n);
+    for (Integer n : resultNodes) System.out.println("communityDetection.node " + n);
+    for (Integer n : resultEdges) System.out.println("communityDetection.edge " + n);
+
+    Graph graph1 = new Graph(resultNodes, resultEdges);
+
+    System.out.println("communityDetection.out "+ graph1);
+    return graph1;
 
   }
 

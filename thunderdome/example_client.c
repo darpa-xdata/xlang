@@ -11,16 +11,16 @@ void printGraph(graph_t* out_graph) {
 	int i = 0;
 	printf("names [");
 	for (i = 0; i < out_graph->numNodes; i++)
-		printf("%s,", out_graph->nodeNames[i]);
+		printf("%s ", out_graph->nodeNames[i]);
 	printf("]\nvalues [");
 	for (i = 0; i < out_graph->numValues; i++)
-		printf("%f,", out_graph->values[i]);
+		printf("%f ", out_graph->values[i]);
 	printf("]\nrow offset [");
 	for (i = 0; i < out_graph->numRowPtrs; i++)
-		printf("%d,", out_graph->rowValueOffsets[i]);
+		printf("%d ", out_graph->rowValueOffsets[i]);
 	printf("]\ncol offset [");
 	for (i = 0; i < out_graph->numValues; i++)
-		printf("%d,", out_graph->colOffsets[i]);
+		printf("%d ", out_graph->colOffsets[i]);
 	printf("]\n");
 
 }
@@ -84,21 +84,35 @@ int main(int argc, char *argv[])
     // tests!
 
     if (0) {
-    java_env->invoke0(&out_java, "nextInt");
-    printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
+    	java_env->invoke0(&out_java, "nextInt");
+    	printf("nextInt() = %d tag %d\n", td_int32(&out_java), td_typeof(&out_java));
 
-    // compare these with GraphAlgorithms.main output
-    graph_t out_graph;
-    java_env->invokeGraph0(&out_graph, "getExampleGraph");
-	printGraph(&out_graph);
+    	// compare these with GraphAlgorithms.main output
+    	graph_t out_graph;
+    	java_env->invokeGraph0(&out_graph, "getExampleGraph");
+    	printGraph(&out_graph);
 
-    java_env->invokeGraph0(&out_graph, "getExampleGraph2");
-	printGraph(&out_graph);
+    	java_env->invokeGraph0(&out_graph, "getExampleGraph2");
+    	printGraph(&out_graph);
     }
 
+    // get back a graph, no arguments
     graph_t out_graph;
     java_env->invokeGraph0(&out_graph, "testCD");
-	printGraph(&out_graph);
+    printGraph(&out_graph);
+
+    // graph in, graph out - community detection
+    graph_t in_graph;
+    int rowPtrs[4] = {0, 2, 4, 6};
+    int colOffsets[6] = {1, 2, 0, 2, 0, 1};
+
+    in_graph.numValues = 6;
+    in_graph.numRowPtrs = 4;
+    in_graph.rowValueOffsets = rowPtrs;
+    in_graph.colOffsets = colOffsets;
+    java_env->invokeGraph1(&out_graph, "communityDetection", &in_graph);
+    printGraph(&out_graph);
+
 
     if (1) return 0;
 
