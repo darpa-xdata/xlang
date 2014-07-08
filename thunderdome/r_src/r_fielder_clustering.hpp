@@ -82,7 +82,6 @@ typename RcppVecType::init_type get_first(SEXPType s) {
 graph_t SEXP_to_graph(const List &s) {
   graph_t g;
   g.numNodes = get_first<IntegerVector>(s["numNodes"]);
-  cout << "g.numNodes is " << g.numNodes << endl;
   vector<string> strs;
   stringstream ss;
   for (int i=0; i < g.numNodes; ++i) {
