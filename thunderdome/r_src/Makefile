@@ -10,10 +10,6 @@
 ## and set set R_HOME accordingly as an environment variable
 R_HOME := 		$(shell R RHOME)
 
-sources := 		$(wildcard *.cpp)
-programs := 		$(sources:.cpp=)
-
-
 ## include headers and libraries for R 
 RCPPFLAGS := 		$(shell $(R_HOME)/bin/R CMD config --cppflags)
 RLDFLAGS := 		$(shell $(R_HOME)/bin/R CMD config --ldflags)
@@ -39,15 +35,14 @@ CPPFLAGS := 		-Wall $(shell $(R_HOME)/bin/R CMD config CPPFLAGS)
 CXXFLAGS := 		$(RCPPFLAGS) $(RCPPINCL) $(RINSIDEINCL) $(shell $(R_HOME)/bin/R CMD config CXXFLAGS)
 LDLIBS := 		$(RLDFLAGS) $(RRPATH) $(RBLAS) $(RLAPACK) $(RCPPLIBS) $(RINSIDELIBS)
 
-all: 			$(programs)
-			@test -x /usr/bin/strip && strip $^
+all: example
+
+example:	r_env_example.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) r_env_example.cpp $(LDLIBS) -o r_env_example
 
 run:			$(programs)
 			@for p in $(programs); do echo; echo "Running $$p:"; ./$$p; done
 
 clean:
-			rm -vf $(programs)
+			rm -vf r_env_example
 			rm -vrf *.dSYM
-
-runAll:
-			for p in $(programs); do echo ""; echo ""; echo "Running $$p"; ./$$p; done

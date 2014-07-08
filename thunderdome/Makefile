@@ -49,6 +49,7 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
 CC = gcc
+CXX = $(shell $(R_HOME)/bin/R CMD config CXX)
 
 LIBTD=libtd.$(LIBTYPE)
 LIBTD_JULIA=libtd_julia.$(LIBTYPE)
