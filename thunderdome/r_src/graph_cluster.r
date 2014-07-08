@@ -4,6 +4,7 @@ library(itertools)
 library(doMC)
 library(Rcpp)
 library(irlba)
+library(SparseM)
 
 #sourceCpp("make_r_sm.cpp")
 registerDoMC()
@@ -46,6 +47,7 @@ fielder_cluster <- function(m, k, use_irlba=TRUE) {
 make_fielder_graph <- function(m, clusters) {
   unique_clusters <- unique(clusters)
   ret_m <- Matrix(0, nrow=length(unique_clusters), ncol=length(unique_clusters))
+#  ret_m <- new("dgTMatrix", Dim=as.integer(rep(length(unique_clusters), 2)))
   for (i in 1:(length(unique_clusters)-1)) {
     i_indices <- which(i == clusters)
     for (j in 2:length(unique_clusters)) {
@@ -61,13 +63,14 @@ make_fielder_graph <- function(m, clusters) {
 
 fielder_cluster_and_graph <- function(m, k) {
   clusters <- fielder_cluster(m, k)
-  graph <- make_fielder_graph(m, clusters)
-  ret_graph <- list(numNodes=as.integer(nrow(m)),
-                    numValues=as.integer(length(m@x)), 
-                    values=as.double(m@x),
-                    numRowPtrs=as.integer(length(m@p)),
-                    rowValueOffsets=as.integer(m@p),
-                    colOffsets=as.integer(m@j))
+  # Note that the following line could be made *way* more efficient.
+  graph <- as(as(make_fielder_graph(m, clusters), "matrix.csr"), "dgRMatrix")
+  ret_graph <- list(numNodes=as.integer(nrow(graph)),
+                    numValues=as.integer(length(graph@x)), 
+                    values=as.double(graph@x),
+                    numRowPtrs=as.integer(length(graph@p)),
+                    rowValueOffsets=as.integer(graph@p),
+                    colOffsets=as.integer(graph@j))
   list(clusters=clusters, graph=ret_graph)
 }
 

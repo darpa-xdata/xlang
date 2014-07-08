@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   RInside R = init_r_env(argc, argv); 
 
   // Create the graph.
-  cout << "creating the csr matrix.\n";
+  cout << "creating the csr matrix\n";
   double values[]={10, -2, 3, 9, 3, 7, 8, 7, 3, 8, 7, 5, 8, 9, 9, 13, 4, 2, -1};
   int ci[]  = { 0,  4, 0, 1, 5, 1, 2, 3, 0, 2, 3, 4, 1, 3, 4, 5, 1, 4, 5};
   int rp[] =  {0, 2, 5, 8, 12, 16, 19};
