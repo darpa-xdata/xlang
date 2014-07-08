@@ -27,6 +27,8 @@ public class CommunityDetectionTest {
     String[] objects = new String[]{"0", "2", "4"};
 
     communityDetection(new Graph(objects,matrix));
+
+    testCD();
   }
 
   public static Graph testCD() {
@@ -39,6 +41,7 @@ public class CommunityDetectionTest {
     String[] objects = new String[]{"0", "2", "4"};
 
     Graph graph = new Graph(objects, matrix);
+    System.out.println("graph " + graph);
     communityDetection(graph);
     return graph;
   }

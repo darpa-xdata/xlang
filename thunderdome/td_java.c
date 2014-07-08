@@ -1155,6 +1155,8 @@ void copyGraph(jobject graph, JNIEnv* persistentJNI, graph_t* out) {
 			graph, colIndex);
 	i = 0;
 	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, colIndexArr);
+	printf("col index len %d\n",arrLength);
+	printf("numValues %d\n",out->numValues);
 	out->colOffsets = malloc(out->numValues * sizeof(int));
 	srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(persistentJNI,
 			colIndexArr, &isCopy1);

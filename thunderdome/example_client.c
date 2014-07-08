@@ -9,17 +9,17 @@
 void printGraph(graph_t* out_graph) {
 	printf("getExampleGraph() = nodes %d \n", out_graph->numNodes);
 	int i = 0;
-	printf("[");
+	printf("names [");
 	for (i = 0; i < out_graph->numNodes; i++)
 		printf("%s,", out_graph->nodeNames[i]);
-	printf("]\n[");
+	printf("]\nvalues [");
 	for (i = 0; i < out_graph->numValues; i++)
 		printf("%f,", out_graph->values[i]);
-	printf("]\n[");
+	printf("]\nrow offset [");
 	for (i = 0; i < out_graph->numRowPtrs; i++)
 		printf("%d,", out_graph->rowValueOffsets[i]);
-	printf("]\n[");
-	for (i = 0; i < out_graph->numNodes; i++)
+	printf("]\ncol offset [");
+	for (i = 0; i < out_graph->numValues; i++)
 		printf("%d,", out_graph->colOffsets[i]);
 	printf("]\n");
 
@@ -96,7 +96,8 @@ int main(int argc, char *argv[])
 	printGraph(&out_graph);
     }
 
-    java_env->invokeGraph0(&out_graph, "communityDetection");
+    graph_t out_graph;
+    java_env->invokeGraph0(&out_graph, "testCD");
 	printGraph(&out_graph);
 
     if (1) return 0;
