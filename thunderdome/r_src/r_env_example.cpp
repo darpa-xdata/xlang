@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   // Output the results.
   cout << "Number of nodes in derived graph is " << ga.graph.numNodes << endl;
   cout << "Cluster assignments for original graph are:\n";
-  for (int i=0; i < ga.graph.numNodes; ++i) {
+  for (int i=0; i < g.numNodes; ++i) {
     cout << ga.cluster_assignments[i] <<  " ";
   }
   cout << endl;
