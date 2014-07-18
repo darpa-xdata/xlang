@@ -1,16 +1,15 @@
-using Stage
-using GZip
+using Stage, GZip, StrPack
+
+log = Log(STDERR)
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Utilities
 # -------------------------------------------------------------------------------------------------------------------------
-log = Log(STDERR)
-
 function getfile(url, fn; expected_size = -1)
   if filesize(fn) != expected_size
-    @timer log "downloading $fn from $url" download(url, fn)
+    @timer "downloading $fn from $url" download(url, fn)
   else
-    @info log "$fn already downloaded, using local version."
+    @info "$fn already downloaded, using local version."
   end
 end
 
@@ -28,48 +27,48 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 type Graph
   names   :: Array{String}
-  sources :: Array{Int64} # source and dests are sorted and can be used to construct a CSC or CSR sparse matrix quickly
-  dests   :: Array{Int64}
+  sources :: Array{Int32} # source and dests are sorted and can be used to construct a CSC or CSR sparse matrix quickly
+  dests   :: Array{Int32}
 end
 
 type CSR
   names :: Array{String}
-  rowptr :: Array{Int64}
-  colidx :: Array{Int64}
+  rowptr :: Array{Int32}
+  colidx :: Array{Int32}
 end
 
 Graph() = Graph((String)[],
-                (Int64)[],
-                (Int64)[])
+                (Int32)[],
+                (Int32)[])
 
 function GraphPre(nodefn, arcfn)
   g = Graph()
 
   # read the index
-  @timer log "reading of node lengths" len = zcountlines(nodefn)
+  @timer "reading of node lengths" len = zcountlines(nodefn)
   g.names = Array(String, len)
 
-  @timer log "reading node names" zopen(nodefn) do f
+  @timer "reading node names" zopen(nodefn) do f
     for (i, line) in enumerate(eachline(f))
       l = split(strip(line), '\t')
       g.names[i] = l[1]
     end
   end
-  @info log "read $(length(g.names)) arcs."
+  @info "read $(length(g.names)) arcs."
 
   # read arcs
-  @timer log "reading arc lengths" len = zcountlines(arcfn)
+  @timer "reading arc lengths" len = zcountlines(arcfn)
 
-  g.sources = Array(Int64, len)
-  g.dests   = Array(Int64, len)
-  @timer log "reading arcs" zopen(arcfn) do f
+  g.sources = Array(Int32, len)
+  g.dests   = Array(Int32, len)
+  @timer "reading arcs" zopen(arcfn) do f
     for (i, arcl) in enumerate(eachline(f))
       arc          = split(strip(arcl[2]), '\t')
-      g.sources[i] = int64(arc[1])
-      g.dests[i]   = int64(arc[2])
+      g.sources[i] = int32(arc[1])
+      g.dests[i]   = int32(arc[2])
     end
   end
-  @info log "read $(length(g.sources)) arcs."
+  @info "read $(length(g.sources)) arcs."
 
   return g
 end
@@ -78,12 +77,12 @@ function Graph(nodefn, arcfn)
   g = Graph()
 
   # read the index
-  @timer log "reading node names" zopen(nodefn) do f
+  @timer "reading node names" zopen(nodefn) do f
     for l in map(x -> split(strip(x), '\t'), eachline(f))
       push!(g.names, l[1])
     end
   end
-  @info log "read $(length(g.names)) nodes."
+  @info "read $(length(g.names)) nodes."
 
   # test
   #@timer log "[test] name2tld" tnames = [ name2tld(g.names[i]) for i = 1:1_000_000 ]
@@ -92,13 +91,13 @@ function Graph(nodefn, arcfn)
   #@info log "tnames = $(length(nnames))"
 
   # read arcs
-  @timer log "reading arc lengths" len = zcountlines(arcfn)
+  @timer "reading arc lengths" len = zcountlines(arcfn)
 
-  g.sources = Array(Int64, len)
-  g.dests   = Array(Int64, len)
+  g.sources = Array(Int32, len)
+  g.dests   = Array(Int32, len)
   gc_disable()
 
-  @timer log "reading arcs" zopen(arcfn) do f
+  @timer "reading arcs" zopen(arcfn) do f
     try
       print(log, "")
       for (i, line) in enumerate(eachline(f))
@@ -121,7 +120,7 @@ function Graph(nodefn, arcfn)
       println!(log, "")
     end
   end
-  @info log "done. read $(length(g.sources)) arcs."
+  @info "done. read $(length(g.sources)) arcs."
 
   return g
 end
@@ -139,13 +138,13 @@ function splittld(name :: String)
 end
 
 function tldcluster(graph :: Graph)
-  @timer log "names -> tld" tnames = [ name2tld(graph.names[i]) for i = 1:length(graph.names) ]
+  @timer "names -> tld" tnames = [ name2tld(graph.names[i]) for i = 1:length(graph.names) ]
 
   # analyze node names
-  tldindex = (String=>Int64)[]
+  tldindex = (String=>Int32)[]
   tldnames = (String)[]
   tidx     = 1
-  @timer log "making name index" begin
+  @timer "making name index" begin
     for t in tnames
       if !(t in keys(tldindex))
         tldindex[t] = tidx
@@ -157,9 +156,9 @@ function tldcluster(graph :: Graph)
 
   # gather arcs
   gc_disable()
-  arcset   = [ Set{Int64}() for x = 1:length(tldnames) ]
+  arcset   = [ Set{Int32}() for x = 1:length(tldnames) ]
   arcindex = 1
-  @timer log "making arcsets" begin
+  @timer "making arcsets" begin
     for (idx, tldname) in enumerate(tnames)
       srcidx = tldindex[tldname]
       while arcindex < length(graph.sources) && graph.sources[arcindex] == idx
@@ -173,10 +172,10 @@ function tldcluster(graph :: Graph)
 
   # construct final arcset
   numarcs = reduce(+, map(x -> length(x), arcset))
-  srcs    = Array(Int64, numarcs) 
-  dests   = Array(Int64, numarcs) 
+  srcs    = Array(Int32, numarcs) 
+  dests   = Array(Int32, numarcs) 
   ai      = 1
-  @timer log "final arcs" begin
+  @timer "final arcs" begin
     for i = 1:length(arcset), j = 1:length(arcset[i])
       srcs[ai]  = i
       dests[ai] = j
@@ -188,18 +187,88 @@ function tldcluster(graph :: Graph)
 end
 
 function CSR(g :: Graph)
-  previ = 0
+  prevsrc  = 0
+  rowptr   = Int32[]
+  dests    = Int32[]
   for i = 1:length(g.sources)
-    if g.sources[i] != previ
-      if previ > 0
-        for j = previ:i
-          push!(rowptr, i) #NOTE: empty rows have the same idx as next row
-        end
+    if g.sources[i] != prevsrc
+      for j = (prevsrc+1):g.sources[i]
+        push!(rowptr, i) #NOTE: empty rows have the same idx as next row
       end
-      previ = i
+      prevsrc = g.sources[i]
     end
   end
-  return CSR(graph.names, rowptr, dests)
+  while length(rowptr) < g.sources[end]
+    push!(rowptr, g.sources[end])
+  end
+  return CSR(g.names, rowptr-1, g.dests-1)
+end
+
+# -------------------------------------------------------------------------------------------------------------------------
+# TD
+# -------------------------------------------------------------------------------------------------------------------------
+immutable TDEnv
+  name         :: Ptr{Uint8}
+  eval         :: Ptr{Any}
+  invoke0      :: Ptr{Any}
+  invoke1      :: Ptr{Any}
+  invoke2      :: Ptr{Any}
+  invoke3      :: Ptr{Any}
+  invokeGraph0 :: Ptr{Any}
+  invokeGraph1 :: Ptr{Any}
+  retain       :: Ptr{Any}
+  release      :: Ptr{Any}
+  get_type     :: Ptr{Any}
+  get_eltype   :: Ptr{Any}
+  get_dataptr  :: Ptr{Any}
+  get_length   :: Ptr{Any}
+  get_ndims    :: Ptr{Any}
+  get_dims     :: Ptr{Any}
+  get_strides  :: Ptr{Any}
+end
+
+@struct type CGraph
+  numNodes         :: Int32
+  nodeNames        :: Ptr{Ptr{Uint8}}
+  numValues        :: Int32
+  values           :: Ptr{Float64}
+  numRowPtrs       :: Int32
+  rowValueOffsets  :: Ptr{Int32}
+  collOffsets      :: Ptr{Int32}
+end
+
+function packit(struct)
+  ret = IOBuffer()
+  pack(ret, struct)
+  ret
+end
+
+function td_init(language; classpath = ".", mainclass = "main", juliapath = "", homedir = ".")
+  if language == :java
+    env = ccall((:td_env_java, "td"), Ptr{TDEnv}, (Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}), homedir, classpath, mainclass)
+  elseif language == :R
+    env = ccall((:td_r_init, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
+  elseif language == :julia
+    env = ccall((:td_env_julia, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
+  elseif language == :python
+    env = ccall((:td_env_python, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
+  end
+  unsafe_load(env)
+end
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Delite-based Louvain
+# -------------------------------------------------------------------------------------------------------------------------
+function dlouvain(java :: TDEnv, csr :: CSR)
+  #in_graph   = CGraph(0, String[], 6, Int32[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
+  in_graph   = CGraph(0, pointer(String[]), length(csr.colidx), pointer(ones(Int32, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
+  out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
+  out_packed = packit(out_graph)
+  ccall(java.invokeGraph1, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}), pointer(out_packed.data), "communityDetection", pointer(packit(in_graph).data))
+  seek(out_packed, 0)
+  cg = unpack(out_packed, CGraph)
+  #return CSR(pointer_to_array(cg.nodeNames, cg.numNodes), pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
+  return CSR([ "" for i = 1:cg.numNodes ], pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
 end
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -221,7 +290,7 @@ function main()
   #s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
   
   # test 2 for Jeff: tld cluster stub/mock
-  @timer log "tld clustering" subg = tldcluster(g)
+  @timer "tld clustering" subg = tldcluster(g)
   println(subg) # should be a fully connected, 4 node graph
 
   # pca        = @spawn td("r_pca", g)
@@ -235,19 +304,27 @@ function main()
 end
 
 function test()
+  # (0) Init
+  path = String[ "cd.jar", "CommunityDetectionJar-bin.jar", "runtime_2.10.jar", "scala-library-2.10.3.jar", "la4j-0.4.9.jar", "commons-lang3-3.3.2.jar" ] 
+  java = td_init(:java, classpath = join(map(s -> "dlouvain/$s", path), ":"), mainclass = "CommunityDetectionTest")
+  
   # (1) Read and setup data structures
   g   = Graph("pld-index-sample.gz", "pld-arc-sample.gz")
-  adj = sparse(g.sources, g.dests, ones(length(g.sources)))
+  g.dests = rand(1:20, 30)
+  csr = CSR(g)
+  println(length(g.sources), " ", g.sources)
+  println(length(g.dests), " ", g.dests)
+  println(length(csr.rowptr), " ", csr.rowptr)
+  println(length(csr.colidx), " ", csr.colidx)
   
   # (2) call analytics via TD
 
-  # test that the matrix is OK
-  s, u = eigs([ spzeros(size(adj, 1), size(adj, 1)) adj; adj' spzeros(size(adj, 2), size(adj, 2)) ]; nev=2, ritzvec=true)
-  @info log "$(s)"
+  # test 1 for Stanford: call louvain
+  louv = dlouvain(java, csr)
 
   # test 2 for Jeff: tld cluster stub/mock
   subg = tldcluster(g)
-  @info log "tld graph == $subg" # should be a fully connected, 4 node graph
+  @info "tld graph == $subg" # should be a fully connected, 4 node graph
 end
 
 if length(ARGS) > 0 && ARGS[1] == "test"
