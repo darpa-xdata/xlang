@@ -1230,8 +1230,6 @@ void td_java_getgraph1(graph_t *out, char *fname, graph_t *in)
 
 		// TODO : add ability to read from a byte buffer on java side, so we don't copy the values
 		// jobject buffer = (*persistentJNI)->NewDirectByteBuffer(persistentJNI,in->rowValueOffsets,in->numRowPtrs);
-		printf("num row ptrs %d\n",in->numRowPtrs);
-		printf("num values   %d\n",in->numValues);
 
 		jintArray rowOffsets = makeIntArray(in->numRowPtrs, in->rowValueOffsets);
 		printf("made   rowOffsets...\n");
