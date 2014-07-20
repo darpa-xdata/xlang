@@ -72,9 +72,9 @@ $(LIBTD_JULIA): td.h td_julia.c $(LIBTD)
 	$(CC) $(DEBUG) -fPIC -c td_julia.c -o td_julia.o $(JULIA_CFLAGS)
 	$(CC) $(DEBUG) -shared -fPIC td_julia.o -o $@ $(JULIA_LDFLAGS) ./$(LIBTD)
 
-$(LIBTD_R): td.h $(LIBTD)
+$(LIBTD_R): td.h $(LIBTD) td_r.cpp
 	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
-	$(R_CXX) $(DEBUG) -shared -fPIC -o $@ $(R_LDFLAGS) $(R_LIBS)
+	$(R_CXX) $(DEBUG) -shared -fPIC td_r.o -o $@ $(R_LDFLAGS) $(R_LIBS) ./$(LIBTD)
 
 # for windows for now...? do we have to make a dll??
 $(LIBTD_JAVA_WINDOWS): td.h td_java.c $(LIBTD)
@@ -87,7 +87,7 @@ $(LIBTD_JAVA): td.h td_java.c $(LIBTD)
 	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/$(ARCH)
 	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/$(SERVER_DIR)/libjvm.$(LIBTYPE) ./$(LIBTD)
 
-example_client: example_client.c td.h $(LIBTD_JULIA) $(LIBTD_PYTHON) $(LIBTD_JAVA)
+example_client: example_client.c td.h $(LIBTD_JULIA) $(LIBTD_PYTHON) $(LIBTD_JAVA) $(LIBTD_R)
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_PYTHON_EXE="\"$(PYTHON_EXE)\"" -DTD_HAS_JULIA=1 -DTD_JULIA_BIN="\"$(JULIA_BIN)\"" $< -o $@ ./$(LIBTD)
 
 # remember to do ant first or point to a valid classpath
@@ -114,7 +114,7 @@ example_python: example_client.c td.h $(LIBTD_PYTHON)
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 $< -o $@ ./$(LIBTD)
 
 clean:
-	rm -f *.$(LIBTYPE) *.o
+	rm -f libtd*.$(LIBTYPE) *.o
 	rm -f example_client
 	rm -f example_client_java
 	rm -f ds_roundtrip

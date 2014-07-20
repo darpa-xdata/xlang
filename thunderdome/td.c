@@ -178,3 +178,36 @@ void td_provide_java(td_env_t *e)
 {
     cached_java_env = e;
 }
+
+// WS: added for R
+static td_env_t *cached_r_env = NULL;
+
+td_env_t *td_env_r(char *homedir) {
+  if (cached_r_env == NULL) {
+    void *h = dlopen("libtd_r.so", RTLD_GLOBAL | RTLD_NOW);
+    if (h == NULL) {
+      fprintf(stderr, "%s\n", dlerror());
+      h = dlopen("libtd_r.dll", RTLD_GLOBAL | RTLD_NOW);
+    }
+    if (h == NULL) {
+      fprintf(stderr, "%s\n", dlerror());
+      h = dlopen("libtd_r.dylib", RTLD_GLOBAL | RTLD_NOW);
+    }
+    if (h == NULL) {
+      fprintf(stderr, "%s\n", dlerror());
+    }
+    fprintf(stderr, "h: 0x%llx\n", h);
+    td_env_t *(*init)(char*) = dlsym(h, "td_r_init");
+    //cached_r_env = init(homedir);
+    fprintf(stderr, "got here: 0x%llx\n", init);
+    init(homedir);
+    fprintf(stderr, "after init\n");
+    
+    assert(cached_r_env);
+  }
+  return cached_r_env;
+}
+
+void td_provide_r(td_env_t *e) {
+  cached_r_env = e;
+}

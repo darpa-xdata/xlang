@@ -61,6 +61,11 @@
 #endif
 
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef enum {
     // primitive types
     TD_INT8=0, TD_UINT8, TD_INT16, TD_UINT16,
@@ -146,6 +151,7 @@ typedef struct _td_env_t {
     void (*invoke3)(td_val_t *out, char *f, td_val_t *, td_val_t *, td_val_t *);
     void (*invokeGraph0)(graph_t *out, char *f);
     void (*invokeGraph1)(graph_t *out, char *f, graph_t *in);
+    void (*invokeGraph2)(graph_t *out, char *f, graph_t *in, int k);
 
     // acquire and release references to owned objects
     void (*retain)(void *obj);
@@ -225,7 +231,7 @@ void td_error(char *msg);
 td_env_t *td_env_julia(char *, char*);  // to get the julia env
 void td_provide_julia(td_env_t *e);     // called by julia main if it runs
 
-td_env_t *td_env_r(char *, char*);  // to get the r env
+td_env_t *td_env_r(char *);  // to get the r env
 void td_provide_r(td_env_t *e);     // called by r main if it runs
 
 td_env_t *td_env_python(char *, char*);  // to get the julia env
@@ -235,5 +241,9 @@ td_env_t *td_env_java(char *, char*, char*);  // to get the java env
 void td_provide_java(td_env_t *e);     // called by java main if it runs
 td_env_t *get_java(const char *classpath, const char *javaClass);  // to get the java env
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
+
