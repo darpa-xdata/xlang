@@ -7,7 +7,8 @@ library(irlba)
 library(SparseM)
 
 #sourceCpp("make_r_sm.cpp")
-registerDoMC()
+#registerDoMC()
+registerDoSEQ()
 
 setMethod("%*%", signature(x="dgRMatrix", y="dgeMatrix"),
   function(x, y) {
@@ -47,7 +48,6 @@ fielder_cluster <- function(m, k, use_irlba=TRUE) {
 make_fielder_graph <- function(m, clusters) {
   unique_clusters <- unique(clusters)
   ret_m <- Matrix(0, nrow=length(unique_clusters), ncol=length(unique_clusters))
-#  ret_m <- new("dgTMatrix", Dim=as.integer(rep(length(unique_clusters), 2)))
   for (i in 1:(length(unique_clusters)-1)) {
     i_indices <- which(i == clusters)
     for (j in 2:length(unique_clusters)) {
