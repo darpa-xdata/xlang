@@ -7,7 +7,8 @@ library(irlba)
 library(SparseM)
 
 #sourceCpp("make_r_sm.cpp")
-registerDoMC()
+#registerDoMC()
+registerDoSEQ()
 
 setMethod("%*%", signature(x="dgRMatrix", y="dgeMatrix"),
   function(x, y) {
