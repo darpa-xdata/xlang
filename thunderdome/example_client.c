@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
     // modify as you pull in more jars
     char *classpath = "out:lib/la4j-0.4.9.jar:lib/commons-lang3-3.3.2.jar";
-    printf("num %d\n",argc);
+    //   printf("num %d\n",argc);
     if (argc >= 2) {
     	classpath = argv[1];
 

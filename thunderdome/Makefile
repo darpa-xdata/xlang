@@ -2,6 +2,7 @@
 # accomodate different platforms
 ARCH="win32"
 LIBTYPE="dll"
+CC = gcc
 UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
         ARCH=linux
@@ -12,6 +13,7 @@ UNAME_S := $(shell uname -s)
         ARCH=darwin
         LIBTYPE=dylib
         SERVER_DIR=server
+	CC=clang -std=c11
     endif
 
 DEBUG = -g
@@ -48,7 +50,6 @@ R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
 
 R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
 R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
-CC = gcc
 CXX = $(shell $(R_HOME)/bin/R CMD config CXX)
 
 LIBTD=libtd.$(LIBTYPE)
@@ -60,7 +61,7 @@ LIBTD_JAVA_WINDOWS=libtd_java_windows.$(LIBTYPE)
 
 default: all
 
-all: example_client ds_roundtrip
+all: example_client example_client_java ds_roundtrip
 
 $(LIBTD): td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -fPIC -c td.c -o td.o
@@ -86,7 +87,7 @@ $(LIBTD_JAVA): td.h td_java.c $(LIBTD)
 	$(CC) $(DEBUG) -fPIC -c td_java.c -o td_java.o -I"$(JAVA_HOME)"/include -I"$(JAVA_HOME)"/include/$(ARCH)
 	$(CC) $(DEBUG) -shared -fPIC td_java.o -o $@ "$(JAVA_HOME)"/jre/lib/$(SERVER_DIR)/libjvm.$(LIBTYPE) ./$(LIBTD)
 
-example_client: example_client.c td.h $(LIBTD_JULIA) $(LIBTD_PYTHON)
+example_client: example_client.c td.h $(LIBTD_JULIA) $(LIBTD_PYTHON) $(LIBTD_JAVA)
 	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_PYTHON_EXE="\"$(PYTHON_EXE)\"" -DTD_HAS_JULIA=1 -DTD_JULIA_BIN="\"$(JULIA_BIN)\"" $< -o $@ ./$(LIBTD)
 
 # remember to do ant first or point to a valid classpath

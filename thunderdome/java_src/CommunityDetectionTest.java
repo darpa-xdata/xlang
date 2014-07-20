@@ -2,24 +2,9 @@ import generated.scala.communitydetectionp.Tup2DeliteArrayIntDeliteArrayInt;
 import xlang.java.Graph;
 
 public class CommunityDetectionTest {
-  public static void main(String[] args) {
-    int[] nodes = {0, 2, 4, 6};
-    int[] edges = {1, 2, 0, 2, 0, 1};
-    Tup2DeliteArrayIntDeliteArrayInt result = communityDetection(nodes, edges);
-
-    // do equivalent with a graph object...
-    testCD();
-  }
-
-  public static Graph testCD() {
-    int[] nodes = {0, 2, 4, 6};
-    int[] edges = {1, 2, 0, 2, 0, 1};
-    Graph graph = new Graph(nodes, edges);
-    Graph outGraph = communityDetection(graph);
-    return outGraph;
-  }
-
   /**
+   * What you call from thunderdome.
+   * <p></p>
    * Assumes a set value for k, since we don't yet have an invokeGraph method that takes a graph and an argument
    * @param graph
    * @return
@@ -44,9 +29,29 @@ public class CommunityDetectionTest {
 
   }
 
-  private static Tup2DeliteArrayIntDeliteArrayInt communityDetection(int[] nodes, int[] edges) {
+  /**
+   * Test invoke_graph0 - a no arg example with a tiny test graph that returns a simple 1x1 graph as a result.
+   * @return
+   */
+  public static Graph testCD() {
+    int[] nodes = {0, 2, 4, 6};
+    int[] edges = {1, 2, 0, 2, 0, 1};
+    Graph graph = new Graph(nodes, edges);
+    return communityDetection(graph);
+  }
+
+  private static Tup2DeliteArrayIntDeliteArrayInt communityDetectionInternal(int[] nodes, int[] edges) {
     double k = 0.01;
 
     return CommunityDetection.apply(nodes, edges, k);
+  }
+
+  public static void main(String[] args) {
+    int[] nodes = {0, 2, 4, 6};
+    int[] edges = {1, 2, 0, 2, 0, 1};
+    Tup2DeliteArrayIntDeliteArrayInt result = communityDetectionInternal(nodes, edges);
+
+    // do equivalent with a graph object...
+    testCD();
   }
 }

@@ -1183,6 +1183,9 @@ void td_java_getgraph0(graph_t *out, char *fname)
 		return;
 	}
 
+	printf("td_java_getgraph0 class  is %s\n",persistentClass);
+	printf("td_java_getgraph0 method is %s\n",fname);
+
 	jstring string = getReturnType(&fname, &clsH);
     const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
 
@@ -1211,10 +1214,13 @@ void td_java_getgraph1(graph_t *out, char *fname, graph_t *in)
 		return;
 	}
 
+	printf("td_java_getgraph1 class  is %s\n",persistentClass);
+	printf("td_java_getgraph1 method is %s\n",fname);
+
 	jstring string = getReturnType(&fname, &clsH);
 	const char* returnString = (*persistentJNI)->GetStringUTFChars(persistentJNI,string, 0);
 
-	printf("td_java_getgraph0 return type for %s is %s\n",fname,returnString);
+	printf("td_java_getgraph1 return type for %s is %s\n",fname,returnString);
 
 	if (strcmp(returnString, XLANG_JAVA_GRAPH) == 0) {
 		jmethodID getGraph = (*persistentJNI)->GetStaticMethodID(persistentJNI, clsH, fname, "(Lxlang/java/Graph;)Lxlang/java/Graph;");
@@ -1226,13 +1232,18 @@ void td_java_getgraph1(graph_t *out, char *fname, graph_t *in)
 		// jobject buffer = (*persistentJNI)->NewDirectByteBuffer(persistentJNI,in->rowValueOffsets,in->numRowPtrs);
 
 		jintArray rowOffsets = makeIntArray(in->numRowPtrs, in->rowValueOffsets);
+		printf("made   rowOffsets...\n");
 		jintArray colOffets  = makeIntArray(in->numValues, in->colOffsets);
 
+		printf("making in graph...\n");
+
 		jobject inGraph = (*persistentJNI)->NewObject(persistentJNI, cls, constructor, rowOffsets, colOffets);
+		printf("made   in graph...\n");
 
 		// create a graph object, set values from in graph
 
 		jobject graph = (*persistentJNI)->CallStaticObjectMethod(persistentJNI, clsH, getGraph, inGraph);
+		printf("made   out graph...\n");
 
 		// Get the graph
 		copyGraph(graph, persistentJNI, out);
