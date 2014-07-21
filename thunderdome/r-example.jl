@@ -51,7 +51,7 @@ function td_init(language; classpath = ".", mainclass = "main", juliapath = "", 
 end
 
 function td_graph(env :: TDEnv, fun, k)
-  in_graph   = CGraph(3, String["1", "2", "3"], 6, Int32[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
+  in_graph   = CGraph(3, String["1", "2", "3"], 6, Float64[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
   out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
   out_packed = packit(out_graph)
   ccall(env.invokeGraph2, Void, (Ptr{CGraph}, Ptr{Int8}, Ptr{CGraph}, Int32), out_packed.data, fun, packit(in_graph).data, k)
@@ -63,7 +63,7 @@ function test()
   env = td_init(:R)
   output = Array(Int32, 100)
   ccall(env.eval, Void, (Ptr{Void}, Ptr{Uint8}), pointer(output), """source("r_src/graph_cluster.r")""") # prep
-  out_graph = td_graph(env, "fielder_cluster_and_graph", 1)
+  out_graph = td_graph(env, "fielder_cluster_and_graph", 2)
 end
 
 # test
