@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 
   // Do the graph clustering. 
   cout << "creating the fielder clusters\n";
-  ga = td_fielder_cluster(R, g, 2);
+  ga = td_fielder_cluster(R, g, 4);
 
   // Output the results.
   cout << "Number of nodes in derived graph is " << ga.graph.numNodes << endl;
