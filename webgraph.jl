@@ -1,6 +1,7 @@
 using Stage, GZip, StrPack
 
 log = Log(STDERR)
+first_rtsvd_call = true
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Utilities
@@ -216,6 +217,7 @@ immutable TDEnv
   invoke3      :: Ptr{Any}
   invokeGraph0 :: Ptr{Any}
   invokeGraph1 :: Ptr{Any}
+  invokeGraph2 :: Ptr{Any}
   retain       :: Ptr{Any}
   release      :: Ptr{Any}
   get_type     :: Ptr{Any}
@@ -247,7 +249,7 @@ function td_init(language; classpath = ".", mainclass = "main", juliapath = "", 
   if language == :java
     env = ccall((:td_env_java, "td"), Ptr{TDEnv}, (Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}), homedir, classpath, mainclass)
   elseif language == :R
-    env = ccall((:td_r_init, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
+    env = ccall((:td_env_r, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
   elseif language == :julia
     env = ccall((:td_env_julia, "td"), Ptr{TDEnv}, (Ptr{Uint8},), homedir)
   elseif language == :python
@@ -261,10 +263,30 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 function dlouvain(java :: TDEnv, csr :: CSR)
   #in_graph   = CGraph(0, String[], 6, Int32[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
-  in_graph   = CGraph(0, pointer(String[]), length(csr.colidx), pointer(ones(Int32, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
+  in_graph   = CGraph(0, pointer(String[]), length(csr.colidx), pointer(ones(Float64, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
   out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
   out_packed = packit(out_graph)
   ccall(java.invokeGraph1, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}), pointer(out_packed.data), "communityDetection", pointer(packit(in_graph).data))
+  seek(out_packed, 0)
+  cg = unpack(out_packed, CGraph)
+  #return CSR(pointer_to_array(cg.nodeNames, cg.numNodes), pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
+  return CSR([ "" for i = 1:cg.numNodes ], pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
+end
+
+# -------------------------------------------------------------------------------------------------------------------------
+# R-based Truncated SVD Clusterer
+# -------------------------------------------------------------------------------------------------------------------------
+function rtsvd(R :: TDEnv, csr :: CSR; k = 2)
+  global first_rtsvd_call
+  in_graph   = CGraph(length(csr.names), pointer(csr.names), length(csr.colidx), pointer(ones(Float64, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
+  out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
+  out_packed = packit(out_graph)
+  output     = Array(Int32, 100) # junk
+  if first_rtsvd_call
+    ccall(R.eval, Void, (Ptr{Void}, Ptr{Uint8}), pointer(output), """source("rtsvd/graph_cluster.r")""")
+    first_rtsvd_call = false
+  end
+  ccall(R.invokeGraph2, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}, Int32), pointer(out_packed.data), "fielder_cluster_and_graph", pointer(packit(in_graph).data), k)
   seek(out_packed, 0)
   cg = unpack(out_packed, CGraph)
   #return CSR(pointer_to_array(cg.nodeNames, cg.numNodes), pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
@@ -307,6 +329,7 @@ function test()
   # (0) Init
   path = String[ "cd.jar", "CommunityDetectionJar-bin.jar", "runtime_2.10.jar", "scala-library-2.10.3.jar", "la4j-0.4.9.jar", "commons-lang3-3.3.2.jar" ] 
   java = td_init(:java, classpath = join(map(s -> "dlouvain/$s", path), ":"), mainclass = "CommunityDetectionTest")
+  R    = td_init(:R)
   
   # (1) Read and setup data structures
   g   = Graph("pld-index-sample.gz", "pld-arc-sample.gz")
@@ -325,6 +348,9 @@ function test()
   # test 2 for Jeff: tld cluster stub/mock
   subg = tldcluster(g)
   @info "tld graph == $subg" # should be a fully connected, 4 node graph
+
+  # test 3 for Yale: call R Graph cluster (TSVD)
+  tsvd = rtsvd(R, csr)
 end
 
 if length(ARGS) > 0 && ARGS[1] == "test"
