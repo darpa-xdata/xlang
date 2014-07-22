@@ -18,4 +18,5 @@ sudo $scriptdir/R.sh
 sudo $scriptdir/python.sh
 sudo $scriptdir/julia.sh
 sudo $scriptdir/tangelo.sh
+sudo $scriptdir/gunrock.sh
 
