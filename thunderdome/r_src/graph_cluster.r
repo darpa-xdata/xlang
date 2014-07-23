@@ -3,7 +3,7 @@ library(foreach)
 library(itertools)
 library(doMC)
 library(Rcpp)
-library(irlba)
+library(IRL)
 library(SparseM)
 
 #sourceCpp("make_r_sm.cpp")
@@ -85,6 +85,10 @@ fielder_cluster_and_graph <- function(m, k) {
                     colOffsets=as.integer(graph@j))
   list(clusters=clusters, graph=ret_graph)
 }
+
+#make_test_graph <- function() {
+#  m <- Matrix(nrow=6, ncol=6)
+#}
 
 #sourceCpp("r_env_example.cpp")
 #m <- make_csr_matrix()
