@@ -3,6 +3,7 @@
 #include <RInside.h>
 
 #include "td.h"
+#include "r_src/r_fielder_clustering.hpp"
 
 using namespace Rcpp;
 using namespace std;
@@ -11,10 +12,10 @@ using namespace std;
 static RInside r_env(0, NULL);
 static set<SEXP> r_obj_set;
 
-#ifdef __cplusplus
+//#ifdef __cplusplus
 extern "C"
 {
-#endif
+  //#endif
 
 static td_tag_t r_type_to_td(SEXPTYPE t)
 {
@@ -55,7 +56,7 @@ static void to_td_val(td_val_t *out, SEXP v)
   else if (tag == TD_ARRAY)
   {
     out->tag = TD_OBJECT;
-    out->owner = td_env_r(NULL, NULL);
+    out->owner = td_env_r(NULL);
     out->object = v;
   }
   else 
@@ -115,7 +116,8 @@ void td_r_eval(td_val_t *out, char *str)
 {
   SEXP ans;
   r_env.parseEval(str, ans);
-  to_td_val(out, ans);
+  // WS: I decree by general hack, for now this will be void
+  //to_td_val(out, ans);
 }
 
 void td_r_invoke0(td_val_t *out, char *fname)
@@ -135,6 +137,39 @@ void td_r_invoke1(td_val_t *out, char *fname, td_val_t *arg)
   r_env.parseEvalQ(string("rm(") + arg_name + ")");
   R_PreserveObject(ans);
   to_td_val(out, ans);
+}
+
+// WS: This is a horrible hack on my part that must eventually die...  Someone please kill it.
+graph_t SEXP_to_graph2(const List &s, graph_t &g) {
+  g.numNodes = get_first<IntegerVector>(s["numNodes"]);
+  vector<string> strs;
+  stringstream ss;
+  for (int i=0; i < g.numNodes; ++i) {
+    ss << i;
+    strs.push_back(ss.str());
+  }
+  g.nodeNames = strings_to_cstrings(strs);
+  g.numValues = get_first<IntegerVector>(s["numValues"]);
+  g.values = copy_to_c_type<NumericVector>(s["values"]);
+  g.numRowPtrs = get_first<IntegerVector>(s["numRowPtrs"]);
+  g.rowValueOffsets = copy_to_c_type<IntegerVector>(s["rowValueOffsets"]);
+  g.colOffsets = copy_to_c_type<IntegerVector>(s["colOffsets"]);
+  return g;
+}
+
+void td_r_invokeGraph2(graph_t *out, char *fname, graph_t *arg, int k)
+{
+  char str[255];
+  derived_graph_and_annotation_t ret;
+  SEXP ans;
+  r_env["m"] = graph_to_dgRMatrix(*arg);
+  r_env["k"] = k;
+  sprintf(str, "%s(m, k)", fname);
+  r_env.parseEval(str, ans);
+  r_env.parseEvalQ("rm(\"m\", \"k\")");
+  List l(ans);
+  ret.graph = SEXP_to_graph2(l["graph"], *out);
+  ret.cluster_assignments = copy_to_c_type<IntegerVector>(l["clusters"]);
 }
 
 td_tag_t td_r_get_type(void *v)
@@ -170,15 +205,16 @@ size_t td_r_get_ndims(void *v)
 
 // initialization
 
-void td_r_init(char *home_dir)
+td_env_t *td_r_init(char *home_dir)
 {
-
   td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
   env->name = "r";
 
   env->eval = &td_r_eval;
   env->invoke0 = &td_r_invoke0;
   env->invoke1 = &td_r_invoke1;
+
+  env->invokeGraph2 = &td_r_invokeGraph2;
   //env->invoke2
   //env->invoke3
 
@@ -195,8 +231,9 @@ void td_r_init(char *home_dir)
   //env->get_strides
 
   td_provide_r(env);
+  return env;
 }
-#ifdef __cplusplus
+  //#ifdef __cplusplus
 } //extern "C"
-#endif
+//#endif
 

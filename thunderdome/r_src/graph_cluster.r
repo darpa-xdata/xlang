@@ -3,7 +3,7 @@ library(foreach)
 library(itertools)
 library(doMC)
 library(Rcpp)
-library(irlba)
+library(IRL)
 library(SparseM)
 
 #sourceCpp("make_r_sm.cpp")
@@ -48,7 +48,6 @@ fielder_cluster <- function(m, k, use_irlba=TRUE) {
 make_fielder_graph <- function(m, clusters) {
   unique_clusters <- unique(clusters)
   ret_m <- Matrix(0, nrow=length(unique_clusters), ncol=length(unique_clusters))
-#  ret_m <- new("dgTMatrix", Dim=as.integer(rep(length(unique_clusters), 2)))
   for (i in 1:(length(unique_clusters)-1)) {
     i_indices <- which(i == clusters)
     for (j in 2:length(unique_clusters)) {
@@ -63,9 +62,21 @@ make_fielder_graph <- function(m, clusters) {
 }
 
 fielder_cluster_and_graph <- function(m, k) {
-  clusters <- fielder_cluster(m, k)
+  num_singular_vectors <- floor(log2(k))
+  print(num_singular_vectors)
+  if (num_singular_vectors != log2(k)) {
+    cat(paste("Warning: The k parameter should be a power of 2.\n",
+              "The number of singular vectors is being set to ",
+              num_singular_vectors, ".\nThe number of clusters is being set",
+              "to a maximum of ", 2^num_singular_vectors, "\n", sep=""))
+  }
+  clusters <- fielder_cluster(m, num_singular_vectors)
   # Note that the following line could be made *way* more efficient.
-  graph <- as(as(make_fielder_graph(m, clusters), "matrix.csr"), "dgRMatrix")
+  a <- as(make_fielder_graph(m, clusters), "matrix.csc")
+  b <- as(a, "Matrix")
+  c <- as(b, "matrix.csr")
+  graph <- as(c, "dgRMatrix")
+#  graph <- as(as(make_fielder_graph(m, clusters), "matrix.csr"), "dgRMatrix")
   ret_graph <- list(numNodes=as.integer(nrow(graph)),
                     numValues=as.integer(length(graph@x)), 
                     values=as.double(graph@x),
@@ -75,6 +86,11 @@ fielder_cluster_and_graph <- function(m, k) {
   list(clusters=clusters, graph=ret_graph)
 }
 
+#make_test_graph <- function() {
+#  m <- Matrix(nrow=6, ncol=6)
+#}
+
+#sourceCpp("r_env_example.cpp")
 #m <- make_csr_matrix()
 #clusters <- fielder_cluster(m, 2)
 #fielder_cluster_and_subgraph(m, clusters)
