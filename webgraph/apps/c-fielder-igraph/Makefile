@@ -1,3 +1,10 @@
+TD_CFLAGS=-I. -I../../ -I../../../
+DEPS =
+OBJ = app-c-fielder-igraph.o ../../etl/c_import.o
+
+.PHONY = help test
+
+
 ## comment this out if you need a different version of R, 
 ## and set set R_HOME accordingly as an environment variable
 R_HOME := 		$(shell R RHOME)
@@ -23,15 +30,10 @@ RINSIDELIBS := 		$(shell echo 'RInside:::LdFlags()'  | $(R_HOME)/bin/R --vanilla
 
 ## compiler etc settings used in default make rules
 CXX := 			$(shell $(R_HOME)/bin/R CMD config CXX)
-CPPFLAGS := 		-Wall $(shell $(R_HOME)/bin/R CMD config CPPFLAGS)
+CPPFLAGS := 		-Wall $(shell $(R_HOME)/bin/R CMD config CPPFLAGS) $(TD_CFLAGS) 
 CXXFLAGS := 		$(RCPPFLAGS) $(RCPPINCL) $(RINSIDEINCL) $(shell $(R_HOME)/bin/R CMD config CXXFLAGS)
 LDLIBS := 		$(RLDFLAGS) $(RRPATH) $(RBLAS) $(RLAPACK) $(RCPPLIBS) $(RINSIDELIBS)
 
-TD_CFLAGS=-I. -I../../
-DEPS =
-OBJ = app-c-fielder-igraph.o
-
-.PHONY = help test
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -41,7 +43,7 @@ help:
 	@echo '                                                                       '
 	@echo 'Usage:                                                                 '
 	@echo '   make test                        tests the c import etl function    '
-	@echo '   make c_import.o                  build the c import etl object      '
+	@echo '   make app                         makes the app'
 	@echo '   make clean                       deletes temporary files            '
 	@echo '                                                                       '
 
@@ -51,7 +53,7 @@ test: app ../data/web-NotreDame.txt ../data/pld-index-sample ../data/pld-arc-sam
 	./test_c_import WDC ../data/pld-arc-sample ../data/pld-index-sample
 
 app: $(OBJ)
-	$(CXX) $(TD_CFLAGS) $(CXXFLAGS) $(CPPFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ $(LDLIBS) -o $@
 
 ../data/pld-index-sample: ../data/pld-index-sample.gz
 	gunzip --keep $^
