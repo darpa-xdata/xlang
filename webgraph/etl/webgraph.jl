@@ -1,7 +1,7 @@
 using Stage, GZip, StrPack
 
 log = Log(STDERR)
-first_rtsvd_call = true
+first_rfielder_call = true
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Utilities
@@ -70,6 +70,27 @@ function GraphPre(nodefn, arcfn)
     end
   end
   @info "read $(length(g.sources)) arcs."
+
+  return g
+end
+
+function Graph(arcfn) # SNAP/Notre Dame format
+  g = Graph()
+  lastsrc = -1
+  @timer "reading arcs" zopen(arcfn) do f
+    for line in map(x -> strip(x), eachline(f))
+      ismatch(r"^#.*$", line) && continue
+      arc = split(line, '\t')
+      source = int64(arc[1]) + 1
+      target = int64(arc[2]) + 1
+      push!(g.sources, source)
+      push!(g.dests, target)
+      if source != lastsrc
+        lastsrc = source
+        push!(g.names, string(source))
+      end
+    end
+  end
 
   return g
 end
@@ -276,15 +297,15 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 # R-based Truncated SVD Clusterer
 # -------------------------------------------------------------------------------------------------------------------------
-function rtsvd(R :: TDEnv, csr :: CSR; k = 2)
-  global first_rtsvd_call
+function rfielder(R :: TDEnv, csr :: CSR; k = 2)
+  global first_rfielder_call
   in_graph   = CGraph(length(csr.names), pointer(csr.names), length(csr.colidx), pointer(ones(Float64, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
   out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
   out_packed = packit(out_graph)
   output     = Array(Int32, 100) # junk
-  if first_rtsvd_call
+  if first_rfielder_call
     ccall(R.eval, Void, (Ptr{Void}, Ptr{Uint8}), pointer(output), """source("../cluster/r_fielder/graph_cluster.r")""")
-    first_rtsvd_call = false
+    first_rfielder_call = false
   end
   ccall(R.invokeGraph2, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}, Int32), pointer(out_packed.data), "fielder_cluster_and_graph", pointer(packit(in_graph).data), k)
   seek(out_packed, 0)
@@ -294,9 +315,9 @@ function rtsvd(R :: TDEnv, csr :: CSR; k = 2)
 end
 
 # -------------------------------------------------------------------------------------------------------------------------
-# Main
+# Examples
 # -------------------------------------------------------------------------------------------------------------------------
-function main()
+function pld()
   # (0) Download files as needed
   getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-index.gz", "../data/pld-index.gz"; expected_size = 311068910)
   getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-arc.gz", "../data/pld-arc.gz"; expected_size = 2912232966)
@@ -350,12 +371,39 @@ function test()
   @info "tld graph == $subg" # should be a fully connected, 4 node graph
 
   # test 3 for Yale: call R Graph cluster (TSVD)
-  tsvd = rtsvd(R, csr)
+  tsvd = rfielder(R, csr)
 end
 
+function notre_dame()
+  # (0) Init
+  path = String[ "cd.jar", "CommunityDetectionJar-bin.jar", "runtime_2.10.jar", "scala-library-2.10.3.jar", "la4j-0.4.9.jar", "commons-lang3-3.3.2.jar" ] 
+  java = td_init(:java, classpath = join(map(s -> "../cluster/dlouvain/$s", path), ":"), mainclass = "CommunityDetectionTest")
+  R    = td_init(:R)
+  
+  # (1) Read and setup data structures
+  g = Graph("../data/web-NotreDame.txt.gz")
+  csr = CSR(g)
+  println(length(g.sources), " ", g.sources[1:10])
+  println(length(g.dests), " ", g.dests[1:10])
+  println(length(csr.rowptr), " ", csr.rowptr[1:10])
+  println(length(csr.colidx), " ", csr.colidx[1:10])
+  
+  # (2) call analytics via TD
+
+  # test 1 for Stanford: call louvain
+  louv = dlouvain(java, csr)
+
+  # test 2 for Yale: call R Graph cluster (TSVD)
+  # UNCOMMENT THIS WHEN fielder issues are figured out
+  #tsvd = rfielder(R, csr)
+end
+
+# -------------------------------------------------------------------------------------------------------------------------
+# Main
+# -------------------------------------------------------------------------------------------------------------------------
 if length(ARGS) > 0 && ARGS[1] == "test"
   test()
 else
-  main()
+  notre_dame()
 end
 
