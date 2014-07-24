@@ -298,11 +298,11 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 function main()
   # (0) Download files as needed
-  getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-index.gz", "pld-index.gz"; expected_size = 311068910)
-  getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-arc.gz", "pld-arc.gz"; expected_size = 2912232966)
+  getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-index.gz", "../data/pld-index.gz"; expected_size = 311068910)
+  getfile("http://data.dws.informatik.uni-mannheim.de/hyperlinkgraph/pld-arc.gz", "../data/pld-arc.gz"; expected_size = 2912232966)
 
   # (1) Read and setup data structures
-  g   = Graph("pld-index.gz", "pld-arc.gz")
+  g   = Graph("../data/pld-index.gz", "../data/pld-arc.gz")
   CSR(g)
   #adj = sparse(g.sources, g.dests, ones(length(g.sources)))
   
