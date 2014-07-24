@@ -11,7 +11,7 @@ void _print_usage()
 Examples:\n\
     test_c_import SNAP ../data/web-NotreDame.txt\n\
 \n\
-    test_c_import WDC ../data/pld-index-sample ../data/pld-arc-sample\n\
+    test_c_import WDC ../data/pld-arc-sample ../data/pld-index-sample\n\
 \n\
 Author(s):\n\
     Andy R. Terrel <andy.terrel@gmail.com>\n\
