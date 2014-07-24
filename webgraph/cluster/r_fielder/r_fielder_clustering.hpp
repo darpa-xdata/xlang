@@ -9,16 +9,7 @@
 using namespace std;
 using namespace Rcpp;
 
-typedef struct {
-  int numNodes;
-  char **nodeNames;
-  // CSR encoding
-  int numValues;
-  double *values;
-  int numRowPtrs;
-  int *rowValueOffsets;
-  int *colOffsets;
-} graph_t;
+#include "../../../thunderdome/td.h"
 
 typedef struct {
   graph_t graph;
