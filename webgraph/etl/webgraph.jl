@@ -283,7 +283,7 @@ function rtsvd(R :: TDEnv, csr :: CSR; k = 2)
   out_packed = packit(out_graph)
   output     = Array(Int32, 100) # junk
   if first_rtsvd_call
-    ccall(R.eval, Void, (Ptr{Void}, Ptr{Uint8}), pointer(output), """source("rtsvd/graph_cluster.r")""")
+    ccall(R.eval, Void, (Ptr{Void}, Ptr{Uint8}), pointer(output), """source("../cluster/r_fielder/graph_cluster.r")""")
     first_rtsvd_call = false
   end
   ccall(R.invokeGraph2, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}, Int32), pointer(out_packed.data), "fielder_cluster_and_graph", pointer(packit(in_graph).data), k)
@@ -328,11 +328,11 @@ end
 function test()
   # (0) Init
   path = String[ "cd.jar", "CommunityDetectionJar-bin.jar", "runtime_2.10.jar", "scala-library-2.10.3.jar", "la4j-0.4.9.jar", "commons-lang3-3.3.2.jar" ] 
-  java = td_init(:java, classpath = join(map(s -> "dlouvain/$s", path), ":"), mainclass = "CommunityDetectionTest")
+  java = td_init(:java, classpath = join(map(s -> "../cluster/dlouvain/$s", path), ":"), mainclass = "CommunityDetectionTest")
   R    = td_init(:R)
   
   # (1) Read and setup data structures
-  g   = Graph("pld-index-sample.gz", "pld-arc-sample.gz")
+  g   = Graph("../data/pld-index-sample.gz", "../data/pld-arc-sample.gz")
   g.dests = rand(1:20, 30)
   csr = CSR(g)
   println(length(g.sources), " ", g.sources)
