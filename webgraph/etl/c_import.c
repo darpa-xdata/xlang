@@ -1,19 +1,6 @@
 #include "c_import.h"
 
 
-const char* getfield(char* line, int num)
-{
-  const char* tok;
-  for (tok = strtok(line, ",");
-       tok && *tok;
-       tok = strtok(NULL, ",\n"))
-    {
-      if (!--num)
-	return tok;
-    }
-  return NULL;
-}
-
 int _parse_graph(FILE* stream, graph_t* output_graph)
 {
   char line[1024];

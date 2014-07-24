@@ -22,7 +22,7 @@ typedef enum {WDC, SNAP} graph_format_t;
 
 
 graph_format_t graph_format_from_str(char* graph_format_str);
-int load_graph(graph_format_t graph_format, char* edg_filename, 
+int load_graph(graph_format_t graph_format, char* edge_filename, 
 	       char* index_filename, graph_t* output_graph);
 
 #ifdef __cplusplus
