@@ -134,7 +134,7 @@ int _snap_parse(char* filename, graph_t* output_graph)
   output_graph->numValues = num_edges;
   output_graph->values = (double*) malloc(sizeof(double) * num_edges);
   for (i = 0; i < num_edges; ++i) {
-    output_graph->values[i] = 0.0;
+    output_graph->values[i] = 1.0;
   }
 
   printf("-------> creating edges\n");
@@ -217,7 +217,7 @@ int _wdc_parse(char* arc_filename, char* index_filename, graph_t* output_graph)
   output_graph->numValues = num_edges;
   output_graph->values = (double*) malloc(sizeof(double) * num_edges);
   for (i = 0; i < num_edges; ++i) {
-    output_graph->values[i] = 0.0;
+    output_graph->values[i] = 1.0;
   }
 
   printf("-------> creating edges\n");
