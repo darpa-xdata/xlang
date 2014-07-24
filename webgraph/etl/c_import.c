@@ -17,6 +17,49 @@ const char* getfield(char* line, int num)
 int _parse_graph(FILE* stream, graph_t* output_graph)
 {
   char line[1024];
+  int src_node, dst_node, ierr;
+  int curr_edge = 0, curr_row = 0;
+  int num_nodes = output_graph->numNodes;
+  int num_edges = output_graph->numValues;
+  int* row_offsets = output_graph->rowValueOffsets;
+  int* col_offsets = output_graph->colOffsets;
+
+  row_offsets[0] = 0;
+  while (fgets(line, 1024, stream)) {
+    if (line[0] == '#') {
+      continue;
+    }
+    ierr = sscanf(line, "%d\t%d\n", &src_node, &dst_node);
+    if (ierr < 0) {
+      printf("Error reading graph line: %s\n", line);
+      return 1;
+    } else if (src_node >= num_nodes || dst_node >= num_nodes){
+      printf("Error reading graph line: %s\n----> read a node that is too large, num nodes is %d\n",
+	     line, num_nodes);
+      return 1;
+    } else if (src_node < 0 || dst_node < 0) {
+      printf("Error reading graph line: %s\n----> recieved negative node", line);
+      return 1;
+    }
+
+    while (src_node != curr_row) {
+      curr_row += 1;
+      if (curr_row > num_nodes) {
+	printf("Error row out of bounds curr_row:%d, line: %s\n", curr_row, line);
+	return 1;
+      }
+      row_offsets[curr_row] = curr_edge;
+    }
+
+    col_offsets[curr_edge] = dst_node;
+    
+    curr_edge += 1;
+    if (curr_edge > num_edges) {
+	printf("Error edges out of bounds curr_edge:%d, last line read: %s\n", curr_edge, line);
+	return 1;
+    }
+  }
+
 
   return 0;
 }
@@ -76,9 +119,9 @@ int _snap_parse(char* filename, graph_t* output_graph)
   }
   
   printf("-------> creating values\n");
-  output_graph->numValues = num_nodes;
-  output_graph->values = (double*) malloc(sizeof(double) * num_nodes);
-  for (i = 0; i < num_nodes; ++i) {
+  output_graph->numValues = num_edges;
+  output_graph->values = (double*) malloc(sizeof(double) * num_edges);
+  for (i = 0; i < num_edges; ++i) {
     output_graph->values[i] = 0.0;
   }
 
