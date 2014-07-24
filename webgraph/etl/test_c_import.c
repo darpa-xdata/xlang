@@ -4,7 +4,7 @@
 void _print_usage()
 {
   char* usage = "test_c_import <graph_name> <graph_type> \n\
-\n\
+    \n\
     graph_name: filename to graph\n\
     graph_format: one of WDC or SNAP\n";
   printf("%s\n", usage);
