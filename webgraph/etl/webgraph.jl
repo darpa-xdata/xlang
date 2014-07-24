@@ -42,6 +42,23 @@ Graph() = Graph((String)[],
                 (Int32)[],
                 (Int32)[])
 
+function print(f :: IO, g :: CSR)
+  println(f, length(g.names))
+  for n in g.names
+    println(f, n)
+  end
+
+  println(f, length(g.rowptr))
+  for rp in g.rowptr
+    println(f, rp)
+  end
+
+  println(f, length(g.colidx))
+  for ci in g.colidx
+    println(f, ci)
+  end
+end
+
 function GraphPre(nodefn, arcfn)
   g = Graph()
 
@@ -392,6 +409,9 @@ function notre_dame()
 
   # test 1 for Stanford: call louvain
   louv = dlouvain(java, csr)
+  f = open("louvain.txt", "w")
+  print(f, louv)
+  close(f)
 
   # test 2 for Yale: call R Graph cluster (TSVD)
   # UNCOMMENT THIS WHEN fielder issues are figured out
