@@ -21,11 +21,6 @@ Author(s):\n\
 
 int main(int argc, char** argv)
 {
-  for (int i=0; i < argc; ++i) {
-    printf("argv[%d]: %s\n", i, argv[i]); 
-  }
-  printf("\n");
-
   if (argc > 4 || argc < 3) {
     _print_usage();
     return 1;
