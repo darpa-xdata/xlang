@@ -10,7 +10,7 @@ public class CommunityDetectionTest {
    * @return
    */
   public static Graph communityDetection(Graph graph) {
-    System.out.println("communityDetection.in " + graph);
+    //System.out.println("communityDetection.in " + graph);
 
     double k = 0.01;
 
@@ -24,7 +24,7 @@ public class CommunityDetectionTest {
 
     Graph graph1 = new Graph(resultNodes, resultEdges);
 
-    System.out.println("communityDetection.out "+ graph1);
+    //System.out.println("communityDetection.out "+ graph1);
     return graph1;
 
   }
