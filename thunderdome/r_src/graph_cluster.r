@@ -2,6 +2,8 @@ library(IRL)
 library(SparseM)
 library(Matrix)
 
+library(igraph)
+
 clusters_from_proj_nodes <- function(proj_nodes) {
   temp <- apply(proj_nodes, 1, 
               function(x) sum(as.numeric(x > 0)*2^(1:ncol(proj_nodes))))
@@ -65,8 +67,21 @@ fielder_cluster_and_graph <- function(m, k) {
 }
 
 make_test_graph <- function() {
-  m <- new("dgRMatrix")
-  m <- Matrix(nrow=6, ncol=6)
+  m <- new("dgRMatrix", Dim=as.integer(c(6, 6)), p=as.integer(rep(0, 7)))
+  m[1, 5] <- 1
+  m[5, 1] <- 1
+  m[2, c(1, 6)] <- 1
+  m[c(1, 6), 2] <- 1
+  m[3, c(2, 4)] <- 1
+  m[c(2, 4), 3] <- 1
+  as(as(m, "matrix.csr"), "dgRMatrix")
+}
+
+write_adjacency_matrix <- function(m) {
+  g <- graph.adjacency(m)
+  png()
+  plot(g)
+  dev.off()
 }
 
 #sourceCpp("r_env_example.cpp")
