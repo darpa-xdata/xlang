@@ -14,8 +14,10 @@ const char* getfield(char* line, int num)
   return NULL;
 }
 
-int _parse_graph(FILE* stream, int num_nodes, int num_edges, graph_t* output_graph)
+int _parse_graph(FILE* stream, graph_t* output_graph)
 {
+  char line[1024];
+
   return 0;
 }
 
@@ -54,7 +56,6 @@ int _snap_parse(char* filename, graph_t* output_graph)
 {
   FILE* stream = fopen(filename, "r");
 
-  char line[1024];
   int num_nodes=0, num_edges=0, ierr=0;
 
   printf("Reading header\n");
@@ -63,11 +64,19 @@ int _snap_parse(char* filename, graph_t* output_graph)
     printf("Error reading snap header\n");
     return 1;
   }
-  fgets(line, 1020, stream);
-  printf("file at: %s\n", line);
 
-  printf("Reading num_nodes: %d, num_edges: %d\n", num_nodes, num_edges);
-  _parse_graph(stream, num_nodes, num_edges, output_graph);
+  printf("Creating graph num_nodes: %d, num_edges: %d\n", num_nodes, num_edges);
+  printf("-------> creating name nodes\n");
+  output_graph->numNodes = num_nodes;
+  output_graph->nodeNames = (char**) malloc(sizeof(char*) * num_nodes);
+  for (int i = 0; i < num_nodes; ++i) {
+    output_graph->nodeNames[i] = (char*) malloc(sizeof(char) * 32);
+    sprintf(output_graph->nodeNames[i],"%d", i);
+  }
+  
+
+
+  //  _snap_parse_graph(stream, num_nodes, num_edges, output_graph);
   return 0;
 }
 
