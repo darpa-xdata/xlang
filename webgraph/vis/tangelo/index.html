@@ -1,0 +1,80 @@
+<html>
+    <head>
+        <title>Internet domain connections</title>
+        <script src="http://trifacta.github.io/vega/lib/d3.v3.min.js"></script>
+        <script src="http://trifacta.github.io/vega/lib/d3.geo.projection.min.js"></script>
+        <script src="http://trifacta.github.io/vega/lib/topojson.js"></script>
+        <script src="http://trifacta.github.io/vega/vega.js"></script>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="main.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <h1>Internet domain connections</h1>
+                    <form class="form-inline search-form" method="get">
+                        <input class="form-control site" name="site" type="text" placeholder="domain.com"></input>
+                        <input class="btn btn-primary search" type="submit" value="Search"></input>
+                    </form>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <label class="current">&nbsp;</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <h3>Link structure of neighborhood</h3>
+                    <div id="vis"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <h3>Top level domain density of neighborhood</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4">
+                    <h4>Incoming</h4>
+                    <div id="overview-in"></div>
+                </div>
+                <div class="col-sm-4">
+                    <h4>Outgoing</h4>
+                    <div id="overview-out"></div>
+                </div>
+                <div class="col-sm-4">
+                    <h4>2-way</h4>
+                    <div id="overview-inout"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4">
+                    <h4>Incoming</h4>
+                    <div id="bar-in"></div>
+                </div>
+                <div class="col-sm-4">
+                    <h4>Outgoing</h4>
+                    <div id="bar-out"></div>
+                </div>
+                <div class="col-sm-4">
+                    <h4>2-way</h4>
+                    <div id="bar-inout"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>

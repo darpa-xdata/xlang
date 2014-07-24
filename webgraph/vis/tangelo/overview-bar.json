@@ -1,0 +1,49 @@
+{
+  "width": 250,
+  "height": 150,
+  "padding": {"top": 10, "left": 60, "bottom": 30, "right": 10},
+  "data": [
+    {
+      "name": "table"
+    }
+  ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "ordinal",
+      "range": "width",
+      "domain": {"data": "table", "field": "data.x"}
+    },
+    {
+      "name": "y",
+      "range": "height",
+      "nice": true,
+      "domain": {"data": "table", "field": "data.y"}
+    },
+    {
+      "name": "tld",
+      "type": "ordinal",
+      "range": "category10",
+      "domain": ["com", "de", "net", "org", "uk", "nl", "ru", "info", "it", "pl", "br", "au", "jp", "fr", "edu", "gov", "other"]
+    }
+  ],
+  "axes": [
+    {"type": "x", "scale": "x"},
+    {"type": "y", "scale": "y"}
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "from": {"data": "table"},
+      "properties": {
+        "enter": {
+          "x": {"scale": "x", "field": "data.x"},
+          "width": {"scale": "x", "band": true, "offset": -1},
+          "y": {"scale": "y", "field": "data.y"},
+          "y2": {"scale": "y", "value": 0},
+          "fill": {"scale": "tld", "field": "data.x"}
+        }
+      }
+    }
+  ]
+}
