@@ -149,9 +149,87 @@ int _snap_parse(char* filename, graph_t* output_graph)
   return 0;
 }
 
+
+int _count_lines(FILE* stream){
+  int count = 0;
+  char line[1024];
+
+  while(fgets(line, 1024, stream)) {
+    if (line[0] == '#' || strlen(line) == 0) continue;
+    count +=1;
+  }
+  fseek(stream, 0, SEEK_SET);
+  return count;
+}
+
+int _wdc_parse_index(FILE* stream, int num_nodes, char** node_names){
+  char line[1024], url[1024];
+  int curr_node = 0, node_id, url_size, ierr;
+
+  while(fgets(line, 1024, stream)) {
+    ierr = sscanf(line, "%s\t%d\n", url, &node_id);
+    if (ierr < 0) {
+      printf("Error reading index line: %s\n", line);
+      return 1;
+    }
+    if (node_id < curr_node) {
+      printf("-------> Error index nodes not monotonically increasing, line: %s", line);
+      return 1;
+    }
+
+    while (curr_node < node_id) {
+      curr_node += 1;
+    }
+
+    if (curr_node >= num_nodes) {
+      printf("-------> Error hit node bigger than max_node");
+      return 1;
+    }
+    url_size = strlen(url);
+    node_names[curr_node] = (char*) malloc(sizeof(char) * url_size);
+    strcpy(node_names[curr_node], url);
+  }
+
+  return 0;
+}
+
 int _wdc_parse(char* arc_filename, char* index_filename, graph_t* output_graph)
 {
-  printf("---> WDC parser not implemented\n");
+  FILE* arc_stream = fopen(arc_filename, "r");
+  FILE* index_stream = fopen(index_filename, "r");
+  int num_nodes=0, num_edges=0, ierr=0, i;
+
+  printf("---> Getting number of nodes and edges\n");
+  num_nodes = _count_lines(index_stream);
+  num_edges = _count_lines(arc_stream);
+  printf("-------> Found %d nodes, %d edges\n", num_nodes, num_edges);
+
+  printf("-------> creating name nodes\n");
+  output_graph->numNodes = num_nodes;
+  output_graph->nodeNames = (char**) malloc(sizeof(char*) * num_nodes);
+  _wdc_parse_index(index_stream, num_nodes, output_graph->nodeNames);
+
+  printf("-------> creating values\n");
+  output_graph->numValues = num_edges;
+  output_graph->values = (double*) malloc(sizeof(double) * num_edges);
+  for (i = 0; i < num_edges; ++i) {
+    output_graph->values[i] = 0.0;
+  }
+
+  printf("-------> creating edges\n");
+  output_graph->numRowPtrs = num_nodes;
+  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes);
+  output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
+
+  printf("-------> parsing graph\n");
+  ierr = _parse_graph(arc_stream, output_graph);
+  if (ierr) {
+    printf("------> Error parsing graph\n");
+    return 1;
+  }
+  printf("-------> finished building graph\n");
+
+
   return 0;
 }
 
