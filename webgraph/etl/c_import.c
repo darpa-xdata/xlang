@@ -56,27 +56,41 @@ int _snap_parse(char* filename, graph_t* output_graph)
 {
   FILE* stream = fopen(filename, "r");
 
-  int num_nodes=0, num_edges=0, ierr=0;
+  int num_nodes=0, num_edges=0, ierr=0, i;
 
-  printf("Reading header\n");
+  printf("---> Reading header\n");
   ierr = _snap_parse_head(stream, &num_nodes, &num_edges);
   if (ierr) {
-    printf("Error reading snap header\n");
+    printf("----> Error reading snap header\n");
     return 1;
   }
 
-  printf("Creating graph num_nodes: %d, num_edges: %d\n", num_nodes, num_edges);
+  printf("---> Creating graph num_nodes: %d, num_edges: %d\n", num_nodes, num_edges);
+
   printf("-------> creating name nodes\n");
   output_graph->numNodes = num_nodes;
   output_graph->nodeNames = (char**) malloc(sizeof(char*) * num_nodes);
-  for (int i = 0; i < num_nodes; ++i) {
+  for (i = 0; i < num_nodes; ++i) {
     output_graph->nodeNames[i] = (char*) malloc(sizeof(char) * 32);
     sprintf(output_graph->nodeNames[i],"%d", i);
   }
   
+  printf("-------> creating values\n");
+  output_graph->numValues = num_nodes;
+  output_graph->values = (double*) malloc(sizeof(double) * num_nodes);
+  for (i = 0; i < num_nodes; ++i) {
+    output_graph->values[i] = 0.0;
+  }
 
+  printf("-------> creating edges\n");
+  output_graph->numRowPtrs = num_nodes;
+  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes);
+  output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
 
-  //  _snap_parse_graph(stream, num_nodes, num_edges, output_graph);
+  printf("-------> parsing graph\n");
+  _parse_graph(stream, output_graph);
+  printf("-------> finished building graph\n");
+
   return 0;
 }
 
@@ -95,7 +109,7 @@ graph_format_t graph_format_from_str(char* graph_format_str)
 
 int load_graph(char* filename, graph_format_t graph_format, graph_t* output_graph)
 {
-  printf("Inside load_graph\n");
+  printf("Load graph\n");
   if (graph_format == SNAP) {
     _snap_parse(filename, output_graph);
   } else {
