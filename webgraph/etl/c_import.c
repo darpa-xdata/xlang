@@ -149,6 +149,11 @@ int _snap_parse(char* filename, graph_t* output_graph)
   return 0;
 }
 
+int _wdc_parse(char* arc_filename, char* index_filename, graph_t* output_graph)
+{
+  printf("---> WDC parser not implemented\n");
+  return 0;
+}
 
 graph_format_t graph_format_from_str(char* graph_format_str)
 {
@@ -162,12 +167,26 @@ graph_format_t graph_format_from_str(char* graph_format_str)
 }
 
 
-int load_graph(char* filename, graph_format_t graph_format, graph_t* output_graph)
+int load_graph(graph_format_t graph_format, char* edge_filename, 
+	       char* index_filename,  graph_t* output_graph)
 {
   printf("Load graph\n");
-  if (graph_format == SNAP) {
-    _snap_parse(filename, output_graph);
-  } else {
+  switch(graph_format) {
+  case SNAP:
+    if (edge_filename == NULL) {
+      printf("---> Error not given an edge_filename\n");
+      return 1;
+    }
+    _snap_parse(edge_filename, output_graph);
+    break;
+  case WDC:
+    if (edge_filename == NULL || index_filename == NULL) {
+      printf("---> Error not given an edge_filename or index_filename\n");
+      return 1;
+    }
+    _wdc_parse(edge_filename, index_filename, output_graph);
+    break;
+  default:
     printf("Unable to read graph format.\n");
     return 1;
   }

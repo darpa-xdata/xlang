@@ -18,6 +18,7 @@
 typedef enum {WDC, SNAP} graph_format_t;
 
 graph_format_t graph_format_from_str(char* graph_format_str);
-int load_graph(char* filename, graph_format_t graph_format, graph_t* output_graph);
+int load_graph(graph_format_t graph_format, char* edg_filename, 
+	       char* index_filename, graph_t* output_graph);
 
 #endif // C_IMPORT_H

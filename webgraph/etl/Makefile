@@ -19,7 +19,7 @@ help:
 
 
 test: test_c_import ../data/web-NotreDame.txt
-	./test_c_import ../data/web-NotreDame.txt SNAP
+	./test_c_import SNAP ../data/web-NotreDame.txt 
 
 test_c_import: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
