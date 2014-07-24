@@ -1,0 +1,2 @@
+#!/bin/bash
+$HADOOP_HOME/bin/hadoop fs -fs hdfs://xd-namenode.xdata.data-tactics-corp.com:8020/ "$@"

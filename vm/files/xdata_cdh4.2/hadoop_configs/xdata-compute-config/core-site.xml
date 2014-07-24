@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+  <property>
+    <name>fs.default.name</name>
+    <value>hdfs://xd-namenode.xdata.data-tactics-corp.com:8020</value>
+  </property>
+
+</configuration>
