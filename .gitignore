@@ -1,0 +1,8 @@
+.vagrant
+*.o
+*.do
+*.so
+*.dylib
+
+webgraph/data/web-NotreDame.txt
+webgraph/etl/test_c_import
