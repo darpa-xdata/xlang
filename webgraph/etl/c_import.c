@@ -38,11 +38,15 @@ int _parse_graph(FILE* stream, graph_t* output_graph)
 	     line, num_nodes);
       return 1;
     } else if (src_node < 0 || dst_node < 0) {
-      printf("Error reading graph line: %s\n----> recieved negative node", line);
+      printf("Error reading graph line: %s\n----> recieved negative node\n", line);
       return 1;
     }
 
     while (src_node != curr_row) {
+      if (src_node < curr_row) {
+	printf("Error src nodes not monotonoically increasing, line %s\n", line);
+	return 1;
+      }
       curr_row += 1;
       if (curr_row > num_nodes) {
 	printf("Error row out of bounds curr_row:%d, line: %s\n", curr_row, line);
@@ -60,6 +64,10 @@ int _parse_graph(FILE* stream, graph_t* output_graph)
     }
   }
 
+  if (curr_edge != num_edges) {
+    printf("Error not enough edges read only found %d\n", curr_edge);
+    return 1;
+  }
 
   return 0;
 }
@@ -131,7 +139,11 @@ int _snap_parse(char* filename, graph_t* output_graph)
   output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
 
   printf("-------> parsing graph\n");
-  _parse_graph(stream, output_graph);
+  ierr = _parse_graph(stream, output_graph);
+  if (ierr) {
+    printf("------> Error parsing graph\n");
+    return 1;
+  }
   printf("-------> finished building graph\n");
 
   return 0;
