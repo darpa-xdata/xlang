@@ -1,0 +1,10 @@
+.vagrant
+*.o
+*.do
+*.so
+*.dylib
+
+webgraph/data/web-NotreDame.txt
+webgraph/data/pld-index-sample
+webgraph/data/pld-arc-sample
+webgraph/etl/test_c_import
