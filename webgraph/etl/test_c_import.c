@@ -19,15 +19,6 @@ Author(s):\n\
   printf("%s\n", usage);
 }
 
-#include "r_fielder_clustering.hpp"
-
-RInside init_r_env(int argc, char*argv[]) {
-  RInside R(argc, argv);
-  R.parseEvalQ("source(\"graph_cluster.r\")");
-  return R;
-}
-
-
 int main(int argc, char** argv)
 {
   if (argc > 4 || argc < 3) {
@@ -38,14 +29,9 @@ int main(int argc, char** argv)
   graph_format_t format = graph_format_from_str(argv[1]);
   char* arc_file = argv[2];
   char* index_file = (argc == 4) ? argv[3] : NULL;
-  int max_cluster = atoi(argc[1]);
   graph_t output_graph;
-  // ga will be the derived graph with annotation
-  derived_graph_and_annotation_t ga;
 
   load_graph(format, arc_file, index_file, &output_graph);
-  ga = td_fielder_cluster(R, g, max_cluster);
-
 
   return 0;
 

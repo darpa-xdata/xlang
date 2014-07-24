@@ -64,6 +64,10 @@ int _parse_graph(FILE* stream, graph_t* output_graph)
     }
   }
 
+  curr_row += 1;
+  row_offsets[curr_row] = num_edges;
+
+
   if (curr_edge != num_edges) {
     printf("Error not enough edges read only found %d\n", curr_edge);
     return 1;
@@ -135,7 +139,7 @@ int _snap_parse(char* filename, graph_t* output_graph)
 
   printf("-------> creating edges\n");
   output_graph->numRowPtrs = num_nodes;
-  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes);
+  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
   output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
 
   printf("-------> parsing graph\n");
@@ -218,7 +222,7 @@ int _wdc_parse(char* arc_filename, char* index_filename, graph_t* output_graph)
 
   printf("-------> creating edges\n");
   output_graph->numRowPtrs = num_nodes;
-  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes);
+  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
   output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
 
   printf("-------> parsing graph\n");
