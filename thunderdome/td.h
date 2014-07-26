@@ -126,7 +126,7 @@ typedef struct {
 } td_val_t;
 
 
-typdef struct {
+typedef struct {
     int numNodes, numEdges;
     char** nodeNames;  // size numNodes
     double* edgeValues; // size numEdges
