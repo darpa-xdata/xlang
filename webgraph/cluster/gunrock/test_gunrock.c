@@ -15,8 +15,8 @@ int _create_simple_td_graph(graph_t *graph)
   graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes+1);
   graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
 
-  memcpy(graph->rowValueOffsets, row_offsets, num_nodes+1);
-  memcpy(graph->colOffsets, col_indices, num_edges);
+  memcpy(graph->rowValueOffsets, (int*)row_offsets, (num_nodes+1) * sizeof(int));
+  memcpy(graph->colOffsets, (int*)col_indices, num_edges * sizeof(int));
 
   return 0;  
 }
@@ -28,35 +28,50 @@ int _destroy_simple_td_graph(graph_t *graph)
   return 0;
 }
 
+int _print_small_array(int* arr, int len){
+  printf("{ ");
+  for(int i=0; i < len; ++i) {
+    printf("%d", arr[i]);
+    if (i < len - 1)
+      printf(", ");
+    else
+      printf("}");
+  }
+
+  return 0;
+}
+
 int test_gunrock_graph_convert()
 {
   graph_t td_graph;
   struct GunrockGraph gr_graph;
 
+  printf("Test Gunrock Graph Convert\n");
+
   _create_simple_td_graph(&td_graph);
   _td_to_gunrock(&td_graph, &gr_graph);
 
-  printf("gunrock col_offsets\n");
-  printf("------> {");
+  printf("---> gunrock row_offsets\n");
+  printf("-----------> ");
+  _print_small_array((int*)gr_graph.row_offsets, gr_graph.num_nodes+1);
+  printf("\n");
 
-  for(int i=0; i <= gr_graph.num_nodes; ++i) {
-    printf("%d", ((int*)gr_graph.col_offsets)[i]);
-    if (i <= gr_graph.num_nodes)
-      printf(", ");
-    else
-      printf("}");      
-  }
+  printf("---> gunrock col_indices\n");
+  printf("-----------> ");
+  _print_small_array((int*)gr_graph.col_indices, gr_graph.num_edges);
+  printf("\n");
 
-  printf("gunrock col_offsets\n");
-  printf("------> {");
 
-  for(int i=0; i < gr_graph.num_edges; ++i) {
-    printf("%d", ((int*) gr_graph.row_indices)[i]);
-    if (i < gr_graph.num_edges)
-      printf(", ");
-    else
-      printf("}");      
-  }
+  printf("---> gunrock col_offsets\n");
+  printf("-----------> ");
+  _print_small_array((int*)gr_graph.col_offsets, gr_graph.num_nodes+1);
+  printf("\n");
+
+  printf("---> gunrock row_indices\n");
+  printf("-----------> ");
+  _print_small_array((int*)gr_graph.row_indices, gr_graph.num_edges);
+  printf("\n");
+
 
   return 0;
 }
