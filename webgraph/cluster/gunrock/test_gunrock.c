@@ -69,7 +69,7 @@ int test_csr_to_ij()
   int ij_expected[30] = { 0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
 		          5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
 
-  _csr_to_ij(num_nodes, num_edges, row_offsets, col_indices, ij_mat);
+  _csr_to_ij(num_nodes, num_edges, (int*) row_offsets, (int*) col_indices, ij_mat);
   if (! _compare_arrays(ij_mat, ij_expected, 30) ){
     printf("---> success\n");
     return 0;
@@ -185,13 +185,26 @@ int test_gunrock_graph_convert()
 
 int test_gunrock_topk()
 {
-  int top_nodes = 10;
-
-  // malloc output result arrays
-  struct GunrockGraph *graph_output =
-    (struct GunrockGraph*)malloc(sizeof(struct GunrockGraph));
+  graph_t td_graph;
+  int top_nodes          = 3;
   int *node_ids          = (int*)malloc(sizeof(int) * top_nodes);
   int *centrality_values = (int*)malloc(sizeof(int) * top_nodes);
+
+  printf("Test Gunrock TopK Cluster\n");
+
+  _create_simple_td_graph(&td_graph);
+  gunrock_topk(&td_graph, top_nodes, node_ids, centrality_values);
+
+  // print results for check correctness
+  int i;
+  for (i = 0; i < top_nodes; ++i)
+  {
+    printf("Node ID [%d] : CV [%d] \n", node_ids[i], centrality_values[i]);
+  }
+  printf("\n");
+
+  if (centrality_values) free(centrality_values);
+  if (node_ids)          free(node_ids);
 
   return 0;
 }
