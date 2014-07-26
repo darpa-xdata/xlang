@@ -1118,13 +1118,13 @@ void copyGraph(jobject graph, JNIEnv* persistentJNI, graph_t* out) {
 			graph, values);
 	i = 0;
 	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, valuesArr);
-	out->numValues = arrLength;
-	out->values = malloc(arrLength * sizeof(double));
+	out->numEdges = arrLength;
+	out->edgeValues = malloc(arrLength * sizeof(double));
 	jboolean isCopy1;
 	jdouble* srcArrayElems = (*persistentJNI)->GetDoubleArrayElements(
 			persistentJNI, valuesArr, &isCopy1);
 	for (; i < arrLength; i++) {
-		out->values[i] = srcArrayElems[i];
+		out->edgeValues[i] = srcArrayElems[i];
 	}
 	if (isCopy1 == JNI_TRUE) {
 		(*persistentJNI)->ReleaseDoubleArrayElements(persistentJNI, valuesArr,
@@ -1137,12 +1137,12 @@ void copyGraph(jobject graph, JNIEnv* persistentJNI, graph_t* out) {
 			graph, rowIndex);
 	i = 0;
 	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, rowIndexArr);
-	out->numRowPtrs = arrLength;
-	out->rowValueOffsets = malloc(arrLength * sizeof(int));
+	out->numNodes = arrLength;
+	out->rowOffsets = malloc(arrLength * sizeof(int));
 	jint* srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(
 			persistentJNI, rowIndexArr, &isCopy1);
 	for (; i < arrLength; i++) {
-		out->rowValueOffsets[i] = srcArrayElemsInt[i];
+          out->rowOffsets[i] = srcArrayElemsInt[i];
 	}
 	if (isCopy1 == JNI_TRUE) {
 		(*persistentJNI)->ReleaseIntArrayElements(persistentJNI, rowIndexArr,
@@ -1156,12 +1156,12 @@ void copyGraph(jobject graph, JNIEnv* persistentJNI, graph_t* out) {
 	i = 0;
 	arrLength = (*persistentJNI)->GetArrayLength(persistentJNI, colIndexArr);
 	printf("col index len %d\n",arrLength);
-	printf("numValues %d\n",out->numValues);
-	out->colOffsets = malloc(out->numValues * sizeof(int));
+	printf("numValues %d\n",out->numEdges);
+	out->colIndices = malloc(out->numEdges * sizeof(int));
 	srcArrayElemsInt = (*persistentJNI)->GetIntArrayElements(persistentJNI,
 			colIndexArr, &isCopy1);
 	for (; i < arrLength; i++) {
-		out->colOffsets[i] = srcArrayElemsInt[i];
+		out->colIndices[i] = srcArrayElemsInt[i];
 	}
 	if (isCopy1 == JNI_TRUE) {
 		(*persistentJNI)->ReleaseIntArrayElements(persistentJNI, colIndexArr,
@@ -1231,9 +1231,9 @@ void td_java_getgraph1(graph_t *out, char *fname, graph_t *in)
 		// TODO : add ability to read from a byte buffer on java side, so we don't copy the values
 		// jobject buffer = (*persistentJNI)->NewDirectByteBuffer(persistentJNI,in->rowValueOffsets,in->numRowPtrs);
 
-		jintArray rowOffsets = makeIntArray(in->numRowPtrs, in->rowValueOffsets);
+		jintArray rowOffsets = makeIntArray(in->numNodes, in->rowOffsets);
 		printf("made   rowOffsets...\n");
-		jintArray colOffets  = makeIntArray(in->numValues, in->colOffsets);
+		jintArray colOffets  = makeIntArray(in->numEdges, in->colIndices);
 
 		printf("making in graph...\n");
 
