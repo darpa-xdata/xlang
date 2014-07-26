@@ -148,6 +148,15 @@ int test_gunrock_graph_convert()
   _create_simple_td_graph(&td_graph);
   td_to_gunrock(&td_graph, &gr_graph);
 
+  int csc_col_expected[8] =  { 0, 1, 2, 5, 7, 9, 12, 15};
+  int csc_row_expected[15] = { 1, 0, 0, 1, 4, 0, 2, 1, 2, 2, 3, 4, 3, 4, 5};
+
+  if (! _compare_arrays(gr_graph.col_offsets, csc_col_expected, 8) &&
+      ! _compare_arrays(gr_graph.row_indices, csc_row_expected, 15)  ){
+    printf("---> success\n");
+    return 0;
+  }
+
   printf("---> gunrock row_offsets\n");
   printf("-----------> ");
   _print_small_array((int*)gr_graph.row_offsets, gr_graph.num_nodes+1);

@@ -91,9 +91,6 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 
   _mergesort_ij_by_col(ij_mat, num_edges);
 
-  csc_col_offsets = (int*) malloc(sizeof(int) * num_nodes + 1);
-  csc_row_indices = (int*) malloc(sizeof(int) * num_edges);
-
   curr_col = 0;
   csc_col_offsets[curr_col] = 0;
   for(curr_edge=0; curr_edge < num_edges; ++curr_edge){
@@ -105,6 +102,7 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
     }
     csc_row_indices[curr_edge] = row;
   }
+  csc_col_offsets[num_nodes] = num_edges;
   return 0;
 }
 
@@ -127,15 +125,17 @@ int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
   size_t num_nodes = td_graph->numNodes;
   size_t num_edges = td_graph->numValues;
 
-  unsigned int col_offsets[8] = {0,1,2,5,7,9,12,15};
-  int row_indices[15] = {1,0,0,1,4,0,2,1,2,2,3,4,3,4,5};
+  int* csc_col_offsets = (int*) malloc(sizeof(int) * num_nodes + 1);
+  int* csc_row_indices = (int*) malloc(sizeof(int) * num_edges);
+  _csr_to_csc(num_nodes, num_edges, td_graph->rowValueOffsets, td_graph->colOffsets,
+	      csc_col_offsets, csc_row_indices);
 
   gr_graph->num_nodes = num_nodes;
   gr_graph->num_edges = num_edges;
   gr_graph->row_offsets = td_graph->rowValueOffsets;
   gr_graph->col_indices = td_graph->colOffsets;
-  gr_graph->col_offsets = (void*)&col_offsets[0];
-  gr_graph->row_indices = (void*)&row_indices[0];
+  gr_graph->col_offsets = (void*)csc_col_offsets;
+  gr_graph->row_indices = (void*)csc_row_indices;
 
   return 0;
 }
