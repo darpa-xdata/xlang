@@ -145,42 +145,26 @@ int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-int gunrock_topk(int top_nodes, graph_t* input_td_graph, graph_t* output_graph)
+int gunrock_topk( graph_t* input_td_graph, int top_nodes, int* node_ids, int* centrality_values)
 {
-  struct GunrockGraph* gr_input;
-  td_to_gunrock(input_td_graph, gr_input);
-
-  // define data types
+  struct GunrockGraph gr_input;
+  struct GunrockGraph gr_output;
   struct GunrockDataType data_type;
   data_type.VTXID_TYPE = VTXID_INT;
   data_type.SIZET_TYPE = SIZET_UINT;
   data_type.VALUE_TYPE = VALUE_INT;
 
-  // malloc output result arrays
-  struct GunrockGraph *gr_output =
-    (struct GunrockGraph*)malloc(sizeof(struct GunrockGraph));
-  int *node_ids          = (int*)malloc(sizeof(int) * top_nodes);
-  int *centrality_values = (int*)malloc(sizeof(int) * top_nodes);
+
+  td_to_gunrock(input_td_graph, &gr_input);
 
   // run topk calculations
   topk_dispatch(
-    (struct GunrockGraph*)gr_output,
+    (struct GunrockGraph*) &gr_output,
     node_ids,
     centrality_values,
-    (const struct GunrockGraph*) gr_input,
+    (const struct GunrockGraph*) &gr_input,
     top_nodes,
     data_type);
 
-  // print results for check correctness
-  int i;
-  for (i = 0; i < top_nodes; ++i)
-  {
-    printf("Node ID [%d] : CV [%d] \n", node_ids[i], centrality_values[i]);
-  }
-  printf("\n");
-
-  if (centrality_values) free(centrality_values);
-  if (node_ids)          free(node_ids);
-  if (gr_output)      free(gr_output);
   return 0;
 }

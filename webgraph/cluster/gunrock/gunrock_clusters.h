@@ -6,9 +6,7 @@
 #include <gunrock.h>
 #include <thunderdome/td.h>
 
-int gunrock_topk(int top_nodes, graph_t* input_td_graph, graph_t* output_graph);
+int gunrock_topk( graph_t* input_td_graph, int top_nodes, int* node_ids, int* centrality_values);
 
 int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph);
-
-
 #endif // GUNROCK_CLUSTERS_H
