@@ -63,10 +63,12 @@ int _csr_to_ij(int num_nodes, int num_edges,
 {
 
   int curr_edge = 0;
-  for (int row_idx = 0; row_idx < num_nodes - 1; ++row_idx) {
-    for (int col_idx = csr_row_offsets[row_idx]; col_idx < csr_row_offsets[row_idx+1]; ++col_idx) {
-      ij_mat[2*curr_edge] = row_idx;
-      ij_mat[2*curr_edge + 1] = csr_col_indicies[col_idx];
+  for (int row = 0; row < num_nodes; ++row) {
+    for (int col_idx = csr_row_offsets[row]; col_idx < csr_row_offsets[row+1]; 
+	 ++col_idx, ++curr_edge) {
+      int col = csr_col_indicies[col_idx];
+      ij_mat[2*curr_edge] = row;
+      ij_mat[2*curr_edge + 1] = col;
     }
   }
   return 0;
@@ -110,7 +112,7 @@ int _csr_to_csc(int num_nodes, int num_edges,
 }
 
 
-int _td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
+int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 {
   // define graph
   size_t num_nodes = td_graph->numNodes;
@@ -137,7 +139,7 @@ int _td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 int gunrock_topk(int top_nodes, graph_t* input_td_graph, graph_t* output_graph)
 {
   struct GunrockGraph* gr_input;
-  _td_to_gunrock(input_td_graph, gr_input);
+  td_to_gunrock(input_td_graph, gr_input);
 
   // define data types
   struct GunrockDataType data_type;
