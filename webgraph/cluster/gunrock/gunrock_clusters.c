@@ -1,7 +1,4 @@
-#include <gunrock/gunrock.h>
-#include <stdio.h>
-#include "td.h"
-
+#include "gunrock_clusters.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Functions to convert csr graph to csc graph
@@ -23,7 +20,7 @@ int _swap_ij_idx(int* ij_mat, int a_idx, int b_idx)
   int tmp_row = ij_mat[2*a_idx];
   int tmp_col = ij_mat[2*a_idx+1];
   ij_mat[2*a_idx] = ij_mat[2*b_idx];
-  ij_mat[2*a_idx+] = ij_mat[2*b_idx+1];
+  ij_mat[2*a_idx+1] = ij_mat[2*b_idx+1];
 
   return 0;
 }
@@ -33,8 +30,8 @@ int _merge_ij_by_col(int* ij_mat, int num_a_edges,  int num_b_edges)
 {
   int curr_a = 0, curr_b = 0;
   while(curr_a < num_a_edges && curr_b < num_b_edges) {
-    if (_compare_ij_cols_idx(a_ij, curr_a, b_ij, curr_b)){
-      _swap_ij_idx(a_ij, curr_a, b_ij, curr_b);
+    if (_compare_ij_cols_idx(ij_mat, curr_a, curr_b)){
+      _swap_ij_idx(ij_mat, curr_a, curr_b);
       ++curr_a;
     } else {
       ++curr_b;
@@ -51,7 +48,7 @@ int _mergesort_ij_by_col(int* ij_mat, int num_edges){
     return 0;
   }  
   int num_left = num_edges / 2;
-  int num_right = num_edges - partition;
+  int num_right = num_edges - num_left;
   _mergesort_ij_by_col(ij_mat, num_left);
   _mergesort_ij_by_col(ij_mat + 2*num_left, num_right);
   _merge_ij_by_col(ij_mat, num_left, num_right);
@@ -64,11 +61,10 @@ int _csr_to_ij(int num_nodes, int num_edges,
 	       int* csr_row_offsets, int *csr_col_indicies, 
 	       int* ij_mat)
 {
-  int* ij_mat = (int*) malloc( sizeof(int) * 2 * num_edges);
 
   int curr_edge = 0;
-  for (int row_idx = 0; row_idx < num_nodes - 1, ++row_idx) {
-    for (int col_idx = csr_row_offsets[row_idx]; col_idx < csr_row_offsets[row_idx+1], ++col_idx) {
+  for (int row_idx = 0; row_idx < num_nodes - 1; ++row_idx) {
+    for (int col_idx = csr_row_offsets[row_idx]; col_idx < csr_row_offsets[row_idx+1]; ++col_idx) {
       ij_mat[2*curr_edge] = row_idx;
       ij_mat[2*curr_edge + 1] = csr_col_indicies[col_idx];
     }
@@ -82,10 +78,12 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 {
   int curr_edge, curr_col, row, col;
 
+  _mergesort_ij_by_col(ij_mat, num_edges);
+
   csc_col_offsets = (int*) malloc(sizeof(int) * num_nodes + 1);
   csc_row_indices = (int*) malloc(sizeof(int) * num_edges);
 
-  curr_col = 0
+  curr_col = 0;
   csc_col_offsets[curr_col] = 0;
   for(curr_edge=0; curr_edge < num_edges; ++curr_edge){
     row = ij_mat[2*curr_edge];
@@ -104,31 +102,29 @@ int _csr_to_csc(int num_nodes, int num_edges,
 		int* csr_row_offsets, int* csr_col_indices,
 		int* csc_col_offsets, int* csc_row_indices)
 {
-  int* ij_mat;
+  int* ij_mat = (int*) malloc( sizeof(int) * 2 * num_edges);
   _csr_to_ij(num_nodes, num_edges, csr_row_offsets, csr_col_indices, ij_mat);
-  _sort_ij_by_col(ij_mat, num_edges);
   _ij_to_csc(num_nodes, num_edges, ij_mat, csc_col_offsets, csc_row_indices);
+  
+  return 0;
 }
 
 
-int _td_to_gunrock(graph_t* td_graph, GunrockGraph* gr_graph)
+int _td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 {
   // define graph
-  size_t num_nodes = input_graph.numNodes;
-  size_t num_edges = input_graph.numValues;
+  size_t num_nodes = td_graph->numNodes;
+  size_t num_edges = td_graph->numValues;
 
   unsigned int col_offsets[8] = {0,1,2,5,7,9,12,15};
   int row_indices[15] = {1,0,0,1,4,0,2,1,2,2,3,4,3,4,5};
 
-  // build graph as input
-  struct GunrockGraph *graph_input =
-    (struct GunrockGraph*)malloc(sizeof(struct GunrockGraph));
-  graph_input->num_nodes = num_nodes;
-  graph_input->num_edges = num_edges;
-  graph_input->row_offsets = input_graph->rowValueOffsets;
-  graph_input->col_indices = input_graph->colOffsets;
-  graph_input->col_offsets = (void*)&col_offsets[0];
-  graph_input->row_indices = (void*)&row_indices[0];
+  gr_graph->num_nodes = num_nodes;
+  gr_graph->num_edges = num_edges;
+  gr_graph->row_offsets = td_graph->rowValueOffsets;
+  gr_graph->col_indices = td_graph->colOffsets;
+  gr_graph->col_offsets = (void*)&col_offsets[0];
+  gr_graph->row_indices = (void*)&row_indices[0];
 
   return 0;
 }
@@ -174,7 +170,6 @@ int gunrock_topk(int top_nodes, graph_t* input_td_graph, graph_t* output_graph)
 
   if (centrality_values) free(centrality_values);
   if (node_ids)          free(node_ids);
-  if (graph_input)       free(graph_input);
-  if (graph_output)      free(graph_output);
+  if (gr_output)      free(gr_output);
   return 0;
 }
