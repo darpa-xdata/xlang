@@ -21,6 +21,8 @@ int _swap_ij_idx(int* ij_mat, int a_idx, int b_idx)
   int tmp_col = ij_mat[2*a_idx+1];
   ij_mat[2*a_idx] = ij_mat[2*b_idx];
   ij_mat[2*a_idx+1] = ij_mat[2*b_idx+1];
+  ij_mat[2*b_idx] = tmp_row;
+  ij_mat[2*b_idx+1] = tmp_col;
 
   return 0;
 }
@@ -28,13 +30,19 @@ int _swap_ij_idx(int* ij_mat, int a_idx, int b_idx)
 
 int _merge_ij_by_col(int* ij_mat, int num_a_edges,  int num_b_edges)
 {
-  int curr_a = 0, curr_b = 0;
-  while(curr_a < num_a_edges && curr_b < num_b_edges) {
+  int curr_a = 0, curr_b = num_a_edges, total_edges = num_a_edges + num_b_edges;
+  while(curr_a < num_a_edges && curr_b < total_edges) {
     if (_compare_ij_cols_idx(ij_mat, curr_a, curr_b)){
       _swap_ij_idx(ij_mat, curr_a, curr_b);
       ++curr_a;
+      for (int idx=curr_b; idx<total_edges; ++idx) {
+	if (_compare_ij_cols_idx(ij_mat, idx, idx+1))
+	  _swap_ij_idx(ij_mat, idx, idx+1);
+	else
+	  break;
+      }
     } else {
-      ++curr_b;
+      ++curr_a;
     }
   }
   return 0;
@@ -49,6 +57,7 @@ int _mergesort_ij_by_col(int* ij_mat, int num_edges){
   }  
   int num_left = num_edges / 2;
   int num_right = num_edges - num_left;
+
   _mergesort_ij_by_col(ij_mat, num_left);
   _mergesort_ij_by_col(ij_mat + 2*num_left, num_right);
   _merge_ij_by_col(ij_mat, num_left, num_right);

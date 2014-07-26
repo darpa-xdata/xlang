@@ -7,6 +7,7 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 int _csr_to_ij(int num_nodes, int num_edges, 
 	       int* csr_row_offsets, int *csr_col_indicies, 
 	       int* ij_mat);
+int _mergesort_ij_by_col(int* ij_mat, int num_edges);
 
 
 int _create_simple_td_graph(graph_t *graph)
@@ -49,10 +50,15 @@ int _print_small_array(int* arr, int len){
   return 0;
 }
 
+int _compare_arrays(int* a, int* b, int len){
+  int ret = 1;
+  for (int idx=0; idx<len; ++idx) 
+    ret &= (a[idx] == b[idx]);
+  return !ret;
+}
+
 int test_csr_to_ij()
 {
-  graph_t td_graph;
-
   printf("Test CSR to IJ\n");
   int num_nodes = 7;
   int num_edges = 15;
@@ -60,7 +66,16 @@ int test_csr_to_ij()
   unsigned int row_offsets[8] = {0,3,6,9,11,14,15,15};
   int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
   int ij_mat[30];
-  
+  int ij_expected[30] = { 0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
+		          5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+
+  _csr_to_ij(num_nodes, num_edges, row_offsets, col_indices, ij_mat);
+  if (! _compare_arrays(ij_mat, ij_expected, 30) ){
+    printf("---> success\n");
+    return 0;
+  }
+
+  printf("---> Error printing diagnostics\n");
   printf("---> row_offsets\n");
   printf("-------> ");
   _print_small_array((int*)row_offsets, num_nodes+1);
@@ -71,13 +86,55 @@ int test_csr_to_ij()
   _print_small_array((int*)col_indices, num_edges);
   printf("\n");
 
-  _csr_to_ij(num_nodes, num_edges, row_offsets, col_indices, ij_mat);
   printf("---> ij_mat\n");
   printf("------> ");
   _print_small_array(ij_mat, 30);
   printf("\n");
 
-  return 0;
+  printf("---> ij_expected\n");
+  printf("------> ");
+  _print_small_array(ij_expected, 30);
+  printf("\n");
+  
+  return 1;
+}
+
+int test_sort_ij_by_col()
+{
+  printf("Test Sort IJ by Col\n");
+  int num_nodes = 7;
+  int num_edges = 15;
+
+  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
+		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
+		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+
+  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3, 
+			 5, 4, 5, 3, 6, 4, 6, 5, 6};
+  
+  _mergesort_ij_by_col(ij_mat, num_edges);
+
+  if (! _compare_arrays(ij_mat, ij_expected, 30) ){
+    printf("---> success\n");
+    return 0;
+  }
+  printf("---> Error printing diagnostics\n");
+  printf("---> ij_mat_orig\n");
+  printf("------> ");
+  _print_small_array(ij_mat_orig, 30);
+  printf("\n");
+  printf("---> ij_mat_sorted_by_col\n");
+  printf("------> ");
+  _print_small_array(ij_mat, 30);
+  printf("\n");
+  printf("---> ij_expected\n");
+  printf("------> ");
+  _print_small_array(ij_expected, 30);
+  printf("\n");
+
+
+  return 1;
 }
 
 
@@ -113,7 +170,7 @@ int test_gunrock_graph_convert()
   printf("\n");
 
 
-  return 0;
+  return 1;
 }
 
 
@@ -135,6 +192,7 @@ int main(int argc, char** argv)
 {
   int ret = 0;
   ret |= test_csr_to_ij();
+  ret |= test_sort_ij_by_col();
   ret |= test_gunrock_graph_convert();
   ret |= test_gunrock_topk();
   return ret;
