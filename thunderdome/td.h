@@ -125,17 +125,17 @@ typedef struct {
     };
 } td_val_t;
 
-typedef struct {
-	int numNodes;
-	char **nodeNames;
 
-	// CSR encoding
-	int numValues;
-	double *values;
-	int numRowPtrs;
-	int *rowValueOffsets;
-	int *colOffsets;
+typdef struct {
+    int numNodes, numEdges;
+    char** nodeNames;  // size numNodes
+    double* edgeValues; // size numEdges
+
+    // CSR encoding 
+    int* rowOffsets; // size numNodes+1
+    int* colIndices; // size numEdges
 } graph_t;
+
 
 typedef struct _td_env_t {
     char *name;
