@@ -126,17 +126,17 @@ int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 {
   // define graph
   size_t num_nodes = td_graph->numNodes;
-  size_t num_edges = td_graph->numValues;
+  size_t num_edges = td_graph->numEdges;
 
   int* csc_col_offsets = (int*) malloc(sizeof(int) * num_nodes + 1);
   int* csc_row_indices = (int*) malloc(sizeof(int) * num_edges);
-  _csr_to_csc(num_nodes, num_edges, td_graph->rowValueOffsets, td_graph->colOffsets,
+  _csr_to_csc(num_nodes, num_edges, td_graph->rowOffsets, td_graph->colIndices,
 	      csc_col_offsets, csc_row_indices);
 
   gr_graph->num_nodes = num_nodes;
   gr_graph->num_edges = num_edges;
-  gr_graph->row_offsets = td_graph->rowValueOffsets;
-  gr_graph->col_indices = td_graph->colOffsets;
+  gr_graph->row_offsets = td_graph->rowOffsets;
+  gr_graph->col_indices = td_graph->colIndices;
   gr_graph->col_offsets = (void*)csc_col_offsets;
   gr_graph->row_indices = (void*)csc_row_indices;
 

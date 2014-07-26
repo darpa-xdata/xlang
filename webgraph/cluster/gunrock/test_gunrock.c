@@ -20,20 +20,20 @@ int _create_simple_td_graph(graph_t *graph)
   int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
   
   graph->numNodes = num_nodes;
-  graph->numValues = num_edges;
-  graph->rowValueOffsets = (int*) malloc(sizeof(int) * num_nodes+1);
-  graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
+  graph->numEdges = num_edges;
+  graph->rowOffsets = (int*) malloc(sizeof(int) * num_nodes+1);
+  graph->colIndices = (int*) malloc(sizeof(int) * num_edges);
 
-  memcpy(graph->rowValueOffsets, (int*)row_offsets, (num_nodes+1) * sizeof(int));
-  memcpy(graph->colOffsets, (int*)col_indices, num_edges * sizeof(int));
+  memcpy(graph->rowOffsets, (int*)row_offsets, (num_nodes+1) * sizeof(int));
+  memcpy(graph->colIndices, (int*)col_indices, num_edges * sizeof(int));
 
   return 0;  
 }
 
 int _destroy_simple_td_graph(graph_t *graph)
 {
-  if(graph->rowValueOffsets) free(graph->rowValueOffsets);
-  if(graph->colOffsets) free(graph->colOffsets);
+  if(graph->rowOffsets) free(graph->rowOffsets);
+  if(graph->colIndices) free(graph->colIndices);
   return 0;
 }
 
