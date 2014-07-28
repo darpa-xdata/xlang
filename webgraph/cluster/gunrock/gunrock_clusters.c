@@ -39,9 +39,9 @@ int _merge_ij_by_col(int* ij_mat, int num_a_edges,  int num_b_edges)
       _swap_ij_idx(ij_mat, curr_a, curr_b);
 
       // Put the value swaped into in the correct spot in b
-      for (int idx=curr_b; idx<total_edges; ++idx) {
-	if (_compare_ij_cols_idx(ij_mat, idx, idx+1))
-	  _swap_ij_idx(ij_mat, idx, idx+1);
+      for (; curr_b<total_edges; ++curr_b) {
+	if (_compare_ij_cols_idx(ij_mat, curr_b, curr_b+1))
+	  _swap_ij_idx(ij_mat, curr_b, curr_b+1);
 	else
 	  break;
       }
@@ -98,7 +98,7 @@ void* _parallel_merge_entry(void* arg)
 
 int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
 {
-  int num_threads = 8;
+  int num_threads = 4;
   int edges_per_thread = num_edges / num_threads;
 
   pthread_t threads[num_threads];
@@ -189,6 +189,7 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 
   printf("------> Sorting ij_mat (edgelist)\n");
   _parallel_mergesort_ij_by_col(ij_mat, num_edges);
+  //_mergesort_ij_by_col(ij_mat, num_edges);
 
   printf("------> Building csr\n");
   curr_col = 0;
