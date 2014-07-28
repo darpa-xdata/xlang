@@ -70,100 +70,6 @@ int _mergesort_ij_by_col(int* ij_mat, int num_edges)
 }
 
 
-#include <pthread.h>
-#include <stdio.h>
-
-typedef struct {
-  int* ij_mat;
-  int num_edges;
-  int num_left;
-  int num_right;
-} arg_t;
-
-void* _parallel_mergesort_entry(void* arg)
-{
-  arg_t *arg_cast = (arg_t*)arg;
-  printf("Calling:  _mergesort_ij_by_col(%d, %d)\n" , arg_cast->ij_mat, arg_cast->num_edges);
-  _mergesort_ij_by_col(arg_cast->ij_mat, arg_cast->num_edges);
-  return NULL;
-}
-
-void* _parallel_merge_entry(void* arg)
-{
-  arg_t *arg_cast = (arg_t*)arg;
-  printf("Calling:  _merge_ij_by_col(%d, %d, %d)\n", arg_cast->ij_mat, arg_cast->num_left, arg_cast->num_right);
-  _merge_ij_by_col(arg_cast->ij_mat, arg_cast->num_left, arg_cast->num_right);
-  return NULL;
-}
-
-int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
-{
-  int num_threads = 4;
-  int edges_per_thread = num_edges / num_threads;
-
-  pthread_t threads[num_threads];
-  arg_t args[num_threads];
-
-  int edges[num_threads];
-  for (int idx=0; idx < num_threads; ++idx)
-    edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1 
-                                                 : edges_per_thread; 
-
-  for (int idx=0; idx < num_threads; ++idx){
-    args[idx].num_edges = edges[idx];
-    int offset = 0;
-    for (int e_idx=0; e_idx < idx; ++e_idx) offset += 2*edges[e_idx];
-    args[idx].ij_mat = ij_mat + offset;
-
-    printf("Idx [%d] Calling on num_edges: %d )\n", idx, args[idx].num_edges);
-    if ( pthread_create(&threads[idx], NULL, _parallel_mergesort_entry, &args[idx]) ) {
-	fprintf(stderr, "Error creating thread\n");
-	return 1;
-    }
-  }
-
-  for (int idx=0; idx < num_threads; ++idx){
-    if(pthread_join(threads[idx], NULL)) {
-      fprintf(stderr, "Error joining thread\n");
-      return 2;
-    }
-  }
-
-
-  for ( num_threads >>= 1; num_threads > 0; num_threads >>= 1){
-    edges_per_thread = num_edges / (2*num_threads);
-
-    for (int idx=0; idx < num_threads; ++idx)
-      edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1 
-	                                           : edges_per_thread; 
-
-    for (int idx=0; idx < num_threads; ++idx){
-      args[idx].num_left = (2*idx < num_edges % 2*num_threads) ? edges_per_thread + 1 
-                                                             : edges_per_thread; 
-      args[idx].num_right = (2*idx+1 < num_edges % 2*num_threads) ? edges_per_thread + 1 
-                                                              : edges_per_thread; 
-
-      int offset = 0;
-      for (int e_idx=0; e_idx < idx; ++e_idx) offset += 2*edges[e_idx];
-      args[idx].ij_mat = ij_mat + offset;
-
-      if ( pthread_create(&threads[idx], NULL, _parallel_merge_entry, &args[idx]) ) {
-	fprintf(stderr, "Error creating thread\n");
-	return 1;
-      }
-    }
-
-    for (int idx=0; idx < num_threads; ++idx){
-      if(pthread_join(threads[idx], NULL)) {
-	fprintf(stderr, "Error joining thread\n");
-	return 2;
-      } 
-    }
-  }
-  return 0;  
-}
-
-
 int _csr_to_ij(int num_nodes, int num_edges, 
 	       int* csr_row_offsets, int *csr_col_indicies, 
 	       int* ij_mat)
@@ -188,8 +94,7 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
   int curr_edge, curr_col, row, col;
 
   printf("------> Sorting ij_mat (edgelist)\n");
-  _parallel_mergesort_ij_by_col(ij_mat, num_edges);
-  //_mergesort_ij_by_col(ij_mat, num_edges);
+  _mergesort_ij_by_col(ij_mat, num_edges);
 
   printf("------> Building csr\n");
   curr_col = 0;
