@@ -28,8 +28,8 @@ help:
 
 
 test: app ../../data/web-NotreDame.txt ../../data/pld-index-sample ../../data/pld-arc-sample
-	./app 4 WDC ../../data/pld-arc-sample ../../data/pld-index-sample
-	./app 10 SNAP ../../data/web-NotreDame.txt
+	time ./app 4 WDC ../../data/pld-arc-sample ../../data/pld-index-sample
+	time ./app 10 SNAP ../../data/web-NotreDame.txt
 
 app: $(OBJ) $(DEPS)
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
