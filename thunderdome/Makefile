@@ -111,7 +111,7 @@ $(LIBTD_PYTHON): td.h td_python.c $(LIBTD)
 	$(CC) $(DEBUG) -shared -fPIC td_python.o -o $@ -I$(PYTHON_LDFLAGS) ./$(LIBTD)
 
 example_python: example_client.c td.h $(LIBTD_PYTHON)
-	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 $< -o $@ ./$(LIBTD)
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_PYTHON_EXE="\"$(PYTHON_EXE)\""  $< -o $@ ./$(LIBTD)
 
 clean:
 	rm -f libtd*.$(LIBTYPE) *.o
