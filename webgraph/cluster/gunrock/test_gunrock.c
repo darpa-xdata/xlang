@@ -138,6 +138,44 @@ int test_sort_ij_by_col()
   return 1;
 }
 
+int test_parallel_sort_ij_by_col()
+{
+  printf("Test Parallel Sort IJ by Col\n");
+  int num_nodes = 7;
+  int num_edges = 15;
+
+  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
+		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
+		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+
+  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3, 
+			 5, 4, 5, 3, 6, 4, 6, 5, 6};
+  
+  _parallel_mergesort_ij_by_col(ij_mat, num_edges);
+
+  if (! _compare_arrays(ij_mat, ij_expected, 30) ){
+    printf("---> success\n");
+    return 0;
+  }
+  printf("---> Error printing diagnostics\n");
+  printf("---> ij_mat_orig\n");
+  printf("------> ");
+  _print_small_array(ij_mat_orig, 30);
+  printf("\n");
+  printf("---> ij_mat_sorted_by_col\n");
+  printf("------> ");
+  _print_small_array(ij_mat, 30);
+  printf("\n");
+  printf("---> ij_expected\n");
+  printf("------> ");
+  _print_small_array(ij_expected, 30);
+  printf("\n");
+
+
+  return 1;
+}
+
 
 int test_gunrock_graph_convert()
 {
