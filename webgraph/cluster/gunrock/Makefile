@@ -5,7 +5,7 @@ GUNROCK_INC=$(GUNROCK_DIR)/gunrock
 GUNROCK_LIBDIR=$(GUNROCK_DIR)/build/lib/
 GUNROCK_LDFLAGS = -L$(GUNROCK_LIBDIR) -Wl,-rpath -Wl,$(GUNROCK_LIBDIR) -lgunrock
 
-CFLAGS=-I. -I../../ -I../../../ -I$(GUNROCK_INC) -g -O0
+CFLAGS=-I. -I../../ -I../../../ -I$(GUNROCK_INC) -g -O0 -DUSE_PTHREADS
 LDFLAGS=$(GUNROCK_LDFLAGS) -lpthread
 DEPS = gunrock_clusters.h
 OBJ = gunrock_clusters.o test_gunrock.o
