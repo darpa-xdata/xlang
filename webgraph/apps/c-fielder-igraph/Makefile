@@ -48,21 +48,21 @@ help:
 	@echo '                                                                       '
 
 
-test: app ../data/web-NotreDame.txt ../data/pld-index-sample ../data/pld-arc-sample
-	./test_c_import SNAP ../data/web-NotreDame.txt
-	./test_c_import WDC ../data/pld-arc-sample ../data/pld-index-sample
+test: app ../../data/web-NotreDame.txt ../../data/pld-index-sample ../../data/pld-arc-sample
+	./app 10 SNAP ../../data/web-NotreDame.txt
+	./app 4 WDC ../../data/pld-arc-sample ../../data/pld-index-sample
 
 app: $(OBJ)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ $(LDLIBS) -o $@
 
-../data/pld-index-sample: ../data/pld-index-sample.gz
+../../data/pld-index-sample: ../../data/pld-index-sample.gz
 	gunzip --keep $^
 
-../data/pld-arc-sample: ../data/pld-arc-sample.gz
+../../data/pld-arc-sample: ../../data/pld-arc-sample.gz
 	gunzip --keep $^
 
-../data/web-NotreDame.txt: ../data/web-NotreDame.txt.gz
+../../data/web-NotreDame.txt: ../../data/web-NotreDame.txt.gz
 	gunzip --keep $^
 
 make clean:
-	rm -f $(OBJ) app ../data/web-NotreDame.txt ../data/pld-arc-sample ../data/pld-index-sample
+	rm -f $(OBJ) app ../../data/web-NotreDame.txt ../../data/pld-arc-sample ../../data/pld-index-sample

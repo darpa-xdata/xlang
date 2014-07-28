@@ -269,12 +269,11 @@ end
 
 @struct type CGraph
   numNodes         :: Int32
+  numEdges         :: Int32
   nodeNames        :: Ptr{Ptr{Uint8}}
-  numValues        :: Int32
-  values           :: Ptr{Float64}
-  numRowPtrs       :: Int32
-  rowValueOffsets  :: Ptr{Int32}
-  collOffsets      :: Ptr{Int32}
+  edgeValues       :: Ptr{Float64}
+  rowOffsets       :: Ptr{Int32}
+  colIndices       :: Ptr{Int32}
 end
 
 function packit(struct)
@@ -300,15 +299,17 @@ end
 # Delite-based Louvain
 # -------------------------------------------------------------------------------------------------------------------------
 function dlouvain(java :: TDEnv, csr :: CSR)
-  #in_graph   = CGraph(0, String[], 6, Int32[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
-  in_graph   = CGraph(0, pointer(String[]), length(csr.colidx), pointer(ones(Float64, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
-  out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
+  in_graph   = CGraph(length(csr.rowptr), length(csr.colidx), pointer([ string(i) for i = 1:length(csr.rowptr) ]), 
+                      pointer(ones(Float64, length(csr.colidx))), pointer(csr.rowptr), pointer(csr.colidx))
+  out_graph  = CGraph(0, 0, C_NULL, C_NULL, C_NULL, C_NULL)
+  @debug "calling louvain with $(length(csr.rowptr)) $(length(csr.colidx))"
   out_packed = packit(out_graph)
-  ccall(java.invokeGraph1, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}), pointer(out_packed.data), "communityDetection", pointer(packit(in_graph).data))
+  ccall(java.invokeGraph1, Void, (Ptr{Void}, Ptr{Int8}, Ptr{Void}), pointer(out_packed.data), "communityDetection", pointer(packit(in_graph).data))
   seek(out_packed, 0)
   cg = unpack(out_packed, CGraph)
-  #return CSR(pointer_to_array(cg.nodeNames, cg.numNodes), pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
-  return CSR([ "" for i = 1:cg.numNodes ], pointer_to_array(cg.rowValueOffsets, cg.numRowPtrs), pointer_to_array(cg.collOffsets, cg.numValues))
+  
+  #return CSR(pointer_to_array(cg.nodeNames, cg.numNodes), pointer_to_array(cg.rowOffsets, cg.numNodes), pointer_to_array(cg.colIndices, cg.numEdges))
+  return CSR([ "" for i = 1:cg.numNodes ], pointer_to_array(cg.rowOffsets, cg.numNodes), pointer_to_array(cg.colIndices, cg.numEdges))
 end
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -316,8 +317,8 @@ end
 # -------------------------------------------------------------------------------------------------------------------------
 function rfielder(R :: TDEnv, csr :: CSR; k = 2)
   global first_rfielder_call
-  in_graph   = CGraph(length(csr.names), pointer(csr.names), length(csr.colidx), pointer(ones(Float64, length(csr.colidx))), length(csr.rowptr), pointer(csr.rowptr), pointer(csr.colidx))
-  out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
+  in_graph   = CGraph(length(csr.names), length(csr.colidx), pointer(csr.names), pointer(ones(Float64, length(csr.colidx))), pointer(csr.rowptr), pointer(csr.colidx))
+  out_graph  = CGraph(0, 0, C_NULL, C_NULL, C_NULL, C_NULL)
   out_packed = packit(out_graph)
   output     = Array(Int32, 100) # junk
   if first_rfielder_call

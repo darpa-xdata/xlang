@@ -13,14 +13,14 @@ void printGraph(graph_t* out_graph) {
 	for (i = 0; i < out_graph->numNodes; i++)
 		printf("%s ", out_graph->nodeNames[i]);
 	printf("]\nvalues [");
-	for (i = 0; i < out_graph->numValues; i++)
-		printf("%f ", out_graph->values[i]);
+	for (i = 0; i < out_graph->numEdges; i++)
+		printf("%f ", out_graph->edgeValues[i]);
 	printf("]\nrow offset [");
-	for (i = 0; i < out_graph->numRowPtrs; i++)
-		printf("%d ", out_graph->rowValueOffsets[i]);
+	for (i = 0; i < out_graph->numNodes; i++)
+		printf("%d ", out_graph->rowOffsets[i]);
 	printf("]\ncol offset [");
-	for (i = 0; i < out_graph->numValues; i++)
-		printf("%d ", out_graph->colOffsets[i]);
+	for (i = 0; i < out_graph->numEdges; i++)
+		printf("%d ", out_graph->colIndices[i]);
 	printf("]\n");
 
 }
@@ -106,10 +106,10 @@ int main(int argc, char *argv[])
     int rowPtrs[4] = {0, 2, 4, 6};
     int colOffsets[6] = {1, 2, 0, 2, 0, 1};
 
-    in_graph.numValues = 6;
-    in_graph.numRowPtrs = 4;
-    in_graph.rowValueOffsets = rowPtrs;
-    in_graph.colOffsets = colOffsets;
+    in_graph.numEdges = 6;
+    in_graph.numNodes = 4;
+    in_graph.rowOffsets = rowPtrs;
+    in_graph.colIndices = colOffsets;
     java_env->invokeGraph1(&out_graph, "communityDetection", &in_graph);
     printGraph(&out_graph);
 

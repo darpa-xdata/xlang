@@ -1,28 +1,15 @@
 #include "c_import.h"
 
 
-const char* getfield(char* line, int num)
-{
-  const char* tok;
-  for (tok = strtok(line, ",");
-       tok && *tok;
-       tok = strtok(NULL, ",\n"))
-    {
-      if (!--num)
-	return tok;
-    }
-  return NULL;
-}
-
 int _parse_graph(FILE* stream, graph_t* output_graph)
 {
   char line[1024];
   int src_node, dst_node, ierr;
   int curr_edge = 0, curr_row = 0;
   int num_nodes = output_graph->numNodes;
-  int num_edges = output_graph->numValues;
-  int* row_offsets = output_graph->rowValueOffsets;
-  int* col_offsets = output_graph->colOffsets;
+  int num_edges = output_graph->numEdges;
+  int* row_offsets = output_graph->rowOffsets;
+  int* col_offsets = output_graph->colIndices;
 
   row_offsets[0] = 0;
   while (fgets(line, 1024, stream)) {
@@ -131,16 +118,15 @@ int _snap_parse(char* filename, graph_t* output_graph)
   }
   
   printf("-------> creating values\n");
-  output_graph->numValues = num_edges;
-  output_graph->values = (double*) malloc(sizeof(double) * num_edges);
+  output_graph->numEdges = num_edges;
+  output_graph->edgeValues = (double*) malloc(sizeof(double) * num_edges);
   for (i = 0; i < num_edges; ++i) {
-    output_graph->values[i] = 1.0;
+    output_graph->edgeValues[i] = 1.0;
   }
 
   printf("-------> creating edges\n");
-  output_graph->numRowPtrs = num_nodes;
-  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
-  output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
+  output_graph->rowOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
+  output_graph->colIndices = (int*) malloc(sizeof(int) * num_edges);
 
   printf("-------> parsing graph\n");
   ierr = _parse_graph(stream, output_graph);
@@ -214,16 +200,15 @@ int _wdc_parse(char* arc_filename, char* index_filename, graph_t* output_graph)
   _wdc_parse_index(index_stream, num_nodes, output_graph->nodeNames);
 
   printf("-------> creating values\n");
-  output_graph->numValues = num_edges;
-  output_graph->values = (double*) malloc(sizeof(double) * num_edges);
+  output_graph->numEdges = num_edges;
+  output_graph->edgeValues = (double*) malloc(sizeof(double) * num_edges);
   for (i = 0; i < num_edges; ++i) {
-    output_graph->values[i] = 1.0;
+    output_graph->edgeValues[i] = 1.0;
   }
 
   printf("-------> creating edges\n");
-  output_graph->numRowPtrs = num_nodes;
-  output_graph->rowValueOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
-  output_graph->colOffsets = (int*) malloc(sizeof(int) * num_edges);
+  output_graph->rowOffsets = (int*) malloc(sizeof(int) * (num_nodes + 1));
+  output_graph->colIndices = (int*) malloc(sizeof(int) * num_edges);
 
   printf("-------> parsing graph\n");
   ierr = _parse_graph(arc_stream, output_graph);

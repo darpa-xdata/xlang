@@ -22,10 +22,9 @@ end
 
 @struct type CGraph
   numNodes         :: Int32
+  numEdges         :: Int32
   nodeNames        :: Ptr{Ptr{Uint8}}
-  numValues        :: Int32
-  values           :: Ptr{Float64}
-  numRowPtrs       :: Int32
+  edgeValues       :: Ptr{Float64}
   rowValueOffsets  :: Ptr{Int32}
   collOffsets      :: Ptr{Int32}
 end
@@ -49,20 +48,21 @@ function td_init(language; classpath = ".", mainclass = "main", juliapath = "", 
   unsafe_load(env)
 end
 
-function td_graph(env :: TDEnv, fun, in)
-  in_graph   = CGraph(0, String[], 6, Int32[1, 1, 1, 1, 1, 1], 4, Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
-  out_graph  = CGraph(0, C_NULL, 0, C_NULL, 0, C_NULL, C_NULL)
+function td_graph(env :: TDEnv, fun)
+  in_graph   = CGraph(3, 6, String["a", "b", "c"], Float64[1, 1, 1, 1, 1, 1], Int32[0, 2, 4, 6], Int32[1, 2, 0, 2, 0, 1])
+  out_graph  = CGraph(0, 0, C_NULL, C_NULL, C_NULL, C_NULL)
   out_packed = packit(out_graph)
-  ccall(env.invokeGraph1, Void, (Ptr{Graph}, Ptr{Int8}, Ptr{Graph}), out_packed.data, fun, packit(in_graph).data)
+  ccall(env.invokeGraph1, Void, (Ptr{Void}, Ptr{Int8}, Ptr{Void}), out_packed.data, fun, packit(in_graph).data)
   seek(out_packed, 0)
-  return unpack(out_packed, Graph)
+  return unpack(out_packed, CGraph)
 end
 
-function test(in_graph)
+function test()
   env = td_init(:java, classpath = "lib/CommunityDetectionJar-bin.jar:lib/runtime_2.10.jar:lib/scala-library-2.10.3.jar:out:lib/la4j-0.4.9.jar:lib/commons-lang3-3.3.2.jar", 
                 mainclass = "CommunityDetectionTest")
-  out_graph = td_graph(env, "communityDetection", in_graph)
+  out_graph = td_graph(env, "communityDetection")
 end
 
 # test
-res = test(g)
+res = test()
+println(res)
