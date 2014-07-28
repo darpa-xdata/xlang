@@ -348,6 +348,36 @@ void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
     Py_DECREF(pValue);
 }
 
+
+void td_py_invoke2(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2)
+{
+    PyObject *pFunc, *pArgs, *pValue;
+
+    pFunc = td_py_get_callable(fname);
+    if (pFunc == NULL) return;
+
+    pArgs = PyTuple_New(2);
+    pValue = from_td_val(arg1);
+    if (pValue == NULL) return;
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 0, pValue);
+
+    pValue = from_td_val(arg2);
+    if (pValue == NULL) return;
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 1, pValue);
+  
+    pValue = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pFunc);
+    Py_DECREF(pArgs);
+    if (pValue == NULL) {
+        fprintf(stderr, "Error in Python call %s\n", fname);
+        return;
+    }
+    to_td_val(out, pValue);
+    Py_DECREF(pValue);
+}
+
 void td_py_eval(td_val_t *out, char *str)
 {
     PyObject *v = PyRun_String(str, 0, NULL, NULL);
@@ -402,7 +432,7 @@ void td_py_init(char *homedir)
     env->eval = &td_py_eval;
     env->invoke0 = &td_py_invoke0;
     env->invoke1 = &td_py_invoke1;
-    //env->invoke2
+    env->invoke2 = &td_py_invoke2;
     //env->invoke3
 
     //env->retain
