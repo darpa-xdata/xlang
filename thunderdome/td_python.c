@@ -28,7 +28,6 @@ static td_tag_t py_type_to_td(PyObject *pVal)
 #endif
     }
     else if (PyLong_Check(pVal)){
-        PyObject *pErr;
         long long v;
         v = PyLong_AsLongLong(pVal);
         if ( v == -1 && PyErr_Occurred()) {
@@ -119,6 +118,36 @@ static td_tag_t numpy_type_to_td(int type_num)
     }
 }
 
+static int td_type_to_numpy(td_tag_t eltype)
+{
+    switch (eltype) {
+    case TD_INT8:
+        return TD_INT8;
+    case TD_UINT8:
+      return NPY_UBYTE;
+    case TD_INT16:
+      return NPY_SHORT;
+    case TD_UINT16:
+      return NPY_USHORT;
+    case TD_INT32:
+      return NPY_INT32;
+    case TD_UINT32:
+      return NPY_UINT;
+    case TD_INT64:
+      return  NPY_INT64;
+    case TD_UINT64:
+      return NPY_UINT64;
+    case TD_FLOAT:
+        return NPY_FLOAT;
+    case TD_DOUBLE:
+        return NPY_DOUBLE;
+    case TD_UTF8:
+      return NPY_UNICODE;
+    default:
+      return NPY_VOID;
+    }
+}
+
 static void to_td_val(td_val_t *out, PyObject *pVal)
 {
     PyObject *pStr;
@@ -177,20 +206,21 @@ static void to_td_val(td_val_t *out, PyObject *pVal)
 }
 
 static PyObject *pyarray_from_td_val(td_val_t *v){
-    td_array_t *arr;
-    arr = (td_array_t *) td_dataptr(v);
+    td_array_t *arr = (td_array_t*)v->object;
     npy_intp arr_shape[arr->ndims];
     for (size_t i=0; i<arr->ndims; ++i) arr_shape[i] = arr->length;
+    int np_type = td_type_to_numpy(arr->eltype);
 
-    return PyArray_SimpleNewFromData(arr->ndims,
+    PyObject *py_obj = PyArray_SimpleNewFromData(arr->ndims,
                                      arr_shape,
-                                     NPY_FLOAT,
+                                     np_type,
                                      arr->data);
+    return py_obj;
 }
 
 static PyObject *from_td_val(td_val_t *v)
 {
-    PyObject *pVal;
+    PyObject *pVal = NULL;
     td_tag_t tag = td_typeof(v);
     switch (tag) {
     case TD_INT8:
@@ -247,7 +277,6 @@ int func_module_name(char *fname, char *modname, char *funcname)
     return 0;
 }
 
-
 PyObject* td_py_get_callable(char *fname)
 {
     PyObject *pName, *pModule, *pFunc;
@@ -257,14 +286,14 @@ PyObject* td_py_get_callable(char *fname)
 
     pName = PyString_FromString(modname);
     if (pName == NULL) {
-        fprintf(stderr, "Error converting module name to PyString");
+        fprintf(stderr, "Error converting module name to PyString\n");
         return NULL;
     }
 
     pModule = PyImport_Import(pName);
     Py_DECREF(pName);
     if (pModule == NULL) {
-        fprintf(stderr, "Error importing module %s", modname);
+        fprintf(stderr, "Error importing module %s\n", modname);
         return NULL;
     }
 
@@ -305,9 +334,9 @@ void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
     pArgs = PyTuple_New(1);
     pValue = from_td_val(arg);
     if (pValue == NULL) return;
+    /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 0, pValue);
-    Py_DECREF(pValue);
-
+  
     pValue = PyObject_CallObject(pFunc, pArgs);
     Py_DECREF(pFunc);
     Py_DECREF(pArgs);
@@ -333,8 +362,8 @@ td_tag_t td_py_get_type(void *v)
 td_tag_t td_py_get_eltype(void *v)
 {
     if (PyArray_Check( (PyObject *) v)){
-        PyArrayObject *arr = (PyArrayObject *)v;
-        return numpy_type_to_td(PyArray_TYPE(v));
+        PyArrayObject *arr = (PyArrayObject *) v;
+        return numpy_type_to_td(PyArray_TYPE(arr));
     }
     return TD_UNKNOWN;
 }
@@ -365,6 +394,7 @@ size_t td_py_get_ndims(void *v)
 void td_py_init(char *homedir)
 {
     Py_Initialize();
+    import_array();
 
     td_env_t *env = (td_env_t*)malloc(sizeof(td_env_t));
     env->name = "python";

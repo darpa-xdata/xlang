@@ -13,10 +13,10 @@ UNAME_S := $(shell uname -s)
         ARCH=darwin
         LIBTYPE=dylib
         SERVER_DIR=server
-	CC=clang -std=c11
+	CC=clang -std=c11 -g -O0
     endif
-
-DEBUG = -g
+CC := /opt/local/bin/clang-mp-3.5 -g -O0
+DEBUG = -g -O0
 
 
 JULIA_BIN = $(shell dirname `which julia`)
