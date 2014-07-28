@@ -26,6 +26,5 @@ def example_hyperlink_plot():
 
 def cluster_vals(nodes, values):
     plt.output_file("in_deg.html", title="In degree rankings")
-    plt.scatter(nodes, values, color=colors, fill_alpha=0.2,
-                size=10, name="In Degree")
+    plt.scatter(nodes, values, size=10, name="Cluster Values")
     plt.show()

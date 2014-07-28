@@ -62,7 +62,7 @@ int main(int argc, char** argv)
   td_array_t td_nodes = { .data=node_ids, .length=top_nodes, .eltype=TD_INT32, .ndims=1 };
   td_val_t arg_py = { .tag = TD_ARRAY, .object = &td_nodes };
   td_array_t td_centralities = { .data=centrality_values, .length=top_nodes, .eltype=TD_INT32, .ndims=1 };
-  td_val_t arg_py_2 = { .tag = TD_INT32, .object = &td_centralities };
+  td_val_t arg_py_2 = { .tag = TD_ARRAY, .object = &td_centralities };
 
   py->invoke2(&out_py, "bokeh_wrap.visualize", &arg_py, &arg_py_2);
   
