@@ -45,6 +45,40 @@ SEXP graph_to_dgRMatrix(graph_t g) {
   return sp_mat;
 }
 
+SEXP graph_to_matrix_csr(graph_t g) {
+  Language sp_mat_call("new", "matrix.csr");
+  S4 sp_mat(sp_mat_call.eval());
+  IntegerVector dims(2);
+  dims[0] = dims[1] = g.numNodes;
+  IntegerVector p(g.numRowPtrs);
+  copy(g.rowValueOffsets, g.rowValueOffsets+g.numRowPtrs, p.begin());
+  for (IntegerVector::iterator it=p.begin(); it < p.end(); ++it) {
+    *it += 1;
+  }
+  IntegerVector j(g.numValues);
+  copy(g.colOffsets, g.colOffsets+g.numValues, j.begin());
+  for (IntegerVector::iterator it=j.begin(); it < j.end(); ++it) {
+    *it += 1;
+  }
+  NumericVector x(g.numValues);
+  copy(g.values, g.values+g.numValues, x.begin());
+  sp_mat.slot("dimension") = dims;
+  sp_mat.slot("ia") = p;
+  sp_mat.slot("ja") = j;
+  sp_mat.slot("ra") = x;
+/*
+  for (int i=0; i < g.numNodes; ++i)
+  {
+    row_names[i] = col_names[i] = g.nodeNames[i];
+  }
+  List dim_names(2);
+  dim_names[0] = row_names;
+  dim_names[1] = col_names;
+  sp_mat.slot("Dimnames") = dim_names;
+*/
+  return sp_mat;
+}
+
 char** strings_to_cstrings(const vector<string> &cv) {
   char** ret = (char**)malloc(sizeof(char*) * cv.size());
   for (size_t i=0; i < cv.size(); ++i) {
@@ -93,6 +127,7 @@ derived_graph_and_annotation_t td_fielder_cluster(RInside &R,graph_t &g,int k) {
   derived_graph_and_annotation_t ret;
   SEXP ans;
   R["m"] = graph_to_dgRMatrix(g);
+//  R["m"] = graph_to_matrix_csr(g);
   R["k"] = k;
   R.parseEval("fielder_cluster_and_graph(m, k)", ans);
   R.parseEvalQ("rm(\"m\", \"k\")");

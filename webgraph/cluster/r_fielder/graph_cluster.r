@@ -1,7 +1,6 @@
 library(IRL)
 library(SparseM)
 library(Matrix)
-
 library(igraph)
 
 clusters_from_proj_nodes <- function(proj_nodes) {
@@ -41,7 +40,7 @@ make_fielder_graph <- function(m, clusters) {
   ret_m
 }
 
-fielder_cluster_and_graph <- function(m, k) {
+fielder_cluster_and_graph <- function(m, k, include_matrix=FALSE) {
   num_singular_vectors <- floor(log2(k))
   if (num_singular_vectors != log2(k)) {
     cat(paste("Warning: The k parameter should be a power of 2.\n",
@@ -55,7 +54,15 @@ fielder_cluster_and_graph <- function(m, k) {
   # Note that the following line could be made *way* more efficient.
   graph <- as(make_fielder_graph(m, clusters), "matrix.csc")
   graph <- as(graph, "Matrix")
+  # Get rid of the self loops.
+  diag(graph) <- 0
   graph <- as(graph, "matrix.csr")
+#  ret_graph <- list(numNodes=as.integer(nrow(graph)),
+#                    numValues=as.integer(length(graph@ra)), 
+#                    values=as.double(graph@ra),
+#                    numRowPtrs=as.integer(length(graph@ia)),
+#                    rowValueOffsets=as.integer(graph@ia-1),
+#                    colOffsets=as.integer(graph@ja-1))
   graph <- as(graph, "dgRMatrix")
   ret_graph <- list(numNodes=as.integer(nrow(graph)),
                     numValues=as.integer(length(graph@x)), 
@@ -63,7 +70,10 @@ fielder_cluster_and_graph <- function(m, k) {
                     numRowPtrs=as.integer(length(graph@p)),
                     rowValueOffsets=as.integer(graph@p),
                     colOffsets=as.integer(graph@j))
-  list(clusters=clusters, graph=ret_graph)
+  ret <- list(clusters=clusters, graph=ret_graph)
+  if (include_matrix)
+    ret$matrix <- graph
+  ret
 }
 
 make_test_graph <- function() {
@@ -77,14 +87,25 @@ make_test_graph <- function() {
   as(as(m, "matrix.csr"), "dgRMatrix")
 }
 
-write_adjacency_matrix <- function(m) {
-  g <- graph.adjacency(m)
-  png()
+write_adjacency_matrix <- function(m, output_png_file_name) {
+  g <- graph.adjacency(m, mode="undirected")
+  png(output_png_file_name)
   plot(g)
-  dev.off()
+  invisible(dev.off())
 }
 
-#sourceCpp("r_env_example.cpp")
-#m <- make_csr_matrix()
-#clusters <- fielder_cluster(m, 2)
-#fielder_cluster_and_subgraph(m, clusters)
+import_snap_graph <- function(fn, symmetrize=TRUE) {
+  x <- read.table(fn, skip=5, header=FALSE)
+  # Get rid of the diagonals
+  x <- x[x[,1] != x[,2],]
+  nr <- max(c(x[,1], x[,2]))+1
+  m <- sparseMatrix(i=x[,1]+1, j=x[,2]+1, x=rep(1, length(x[,1])), 
+                    dims=c(nr, nr))
+  if (symmetrize) {
+    m <- m + t(m)
+    m@x[m@x == 2] <- 1
+  }
+  dimnames(m) <- c(list(as.character(1:nrow(m))), list(as.character(1:nrow(m))))
+  m
+}
+
