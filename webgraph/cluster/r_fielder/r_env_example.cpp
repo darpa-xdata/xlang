@@ -35,11 +35,10 @@ int main(int argc, char *argv[]) {
   char* cs[] = {c1, c2, c3, c4, c5, c6};
   graph_t g;
   g.numNodes = 6;
-  g.numValues = 19;
-  g.values = values;
-  g.numRowPtrs = 7;
-  g.rowValueOffsets = rp;
-  g.colOffsets=ci;
+  g.numEdges = 19;
+  g.edgeValues = values;
+  g.rowOffsets = rp;
+  g.colIndices = ci;
   g.nodeNames = cs;
 
   // Do the graph clustering. 

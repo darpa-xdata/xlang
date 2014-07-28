@@ -10,10 +10,9 @@ using namespace Rcpp;
 
 #include "cluster/r_fielder/r_fielder_clustering.hpp"
 
-
 void _print_usage()
 {
-  char* usage = "c-fielder-igraph <max_num_clusters>  <graph_type> <graph_name>\n\
+  string usage = "c-fielder-igraph <max_num_clusters>  <graph_type> <graph_name>\n\
     \n\
     Use c etl, clusters with fielder cluseter, and produces an \n\
     igraph png. \n\
@@ -32,7 +31,7 @@ Examples:\n\
 Author(s):\n\
     Michael Kane <kaneplusplus@gmail.com>\n\
     Andy R. Terrel <andy.terrel@gmail.com>\n";
-  printf("%s\n", usage);
+  printf("%s\n", usage.c_str());
 }
 
 
@@ -43,30 +42,31 @@ RInside init_r_env(int argc, char*argv[]) {
 }
 
 
+// You can run this with ./app 32 ../../data/web-NotreDame.txt 
 
 int main(int argc, char** argv)
 {
-  if (argc > 5 || argc < 4) {
+  if (argc != 3) {
     _print_usage();
     return 1;
   }
 
   // Set up R
-  cout << "setting up the R environment\n";
+  cout << "Setting up the R environment.\n";
   RInside R = init_r_env(argc, argv); 
-
-  graph_format_t format = graph_format_from_str(argv[2]);
-  char* arc_file = argv[3];
-  char* index_file = (argc == 5) ? argv[4] : NULL;
+  string output_png_file = "out.png";
+  string snap_file_name = string(argv[2]);
   int max_cluster = atoi(argv[1]);
-  graph_t output_graph;
+  graph_t input_graph;
   // ga will be the derived graph with annotation
   derived_graph_and_annotation_t ga;
-
-  load_graph(format, arc_file, index_file, &output_graph);
-  ga = td_fielder_cluster(R, output_graph, max_cluster);
-  
-
+  cout << "Loading " << snap_file_name << ".\n"; 
+  input_graph = load_snap_graph_from_r(R, snap_file_name);
+  // load_graph(format, arc_file, index_file, &output_graph);
+  cout << "Creating the fielder clusters.\n";
+  ga = td_fielder_cluster(R, input_graph, max_cluster);
+  cout << "Writing the output to " << output_png_file << ".\n";
+  write_graph(R, ga.graph, output_png_file); 
   return 0;
 
 }

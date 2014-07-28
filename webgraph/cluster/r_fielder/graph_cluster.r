@@ -1,7 +1,7 @@
-library(IRL)
-library(SparseM)
-library(Matrix)
-library(igraph)
+require(IRL, quietly=TRUE)
+require(Matrix, quietly=TRUE)
+require(SparseM, quietly=TRUE, warn.conflicts=FALSE)
+require(igraph, quietly=TRUE)
 
 clusters_from_proj_nodes <- function(proj_nodes) {
   temp <- apply(proj_nodes, 1, 
@@ -40,6 +40,16 @@ make_fielder_graph <- function(m, clusters) {
   ret_m
 }
 
+dgRMatrix_to_list <- function(m){
+  if (class(m) != "dgRMatrix")
+    m <- as(as(m, "matrix.csr"), "dgRMatrix")
+  list(numNodes=as.integer(nrow(m)),
+       numEdges=as.integer(length(m@x)), 
+       edgeValues=as.double(m@x),
+       rowOffsets=as.integer(m@p),
+       colIndices=as.integer(m@j))
+}
+
 fielder_cluster_and_graph <- function(m, k, include_matrix=FALSE) {
   num_singular_vectors <- floor(log2(k))
   if (num_singular_vectors != log2(k)) {
@@ -56,20 +66,7 @@ fielder_cluster_and_graph <- function(m, k, include_matrix=FALSE) {
   graph <- as(graph, "Matrix")
   # Get rid of the self loops.
   diag(graph) <- 0
-  graph <- as(graph, "matrix.csr")
-#  ret_graph <- list(numNodes=as.integer(nrow(graph)),
-#                    numValues=as.integer(length(graph@ra)), 
-#                    values=as.double(graph@ra),
-#                    numRowPtrs=as.integer(length(graph@ia)),
-#                    rowValueOffsets=as.integer(graph@ia-1),
-#                    colOffsets=as.integer(graph@ja-1))
-  graph <- as(graph, "dgRMatrix")
-  ret_graph <- list(numNodes=as.integer(nrow(graph)),
-                    numValues=as.integer(length(graph@x)), 
-                    values=as.double(graph@x),
-                    numRowPtrs=as.integer(length(graph@p)),
-                    rowValueOffsets=as.integer(graph@p),
-                    colOffsets=as.integer(graph@j))
+  ret_graph <- dgRMatrix_to_list(graph)
   ret <- list(clusters=clusters, graph=ret_graph)
   if (include_matrix)
     ret$matrix <- graph
@@ -91,7 +88,7 @@ write_adjacency_matrix <- function(m, output_png_file_name) {
   g <- graph.adjacency(m, mode="undirected")
   png(output_png_file_name)
   plot(g)
-  invisible(dev.off())
+  dev.off()
 }
 
 import_snap_graph <- function(fn, symmetrize=TRUE) {
@@ -106,6 +103,6 @@ import_snap_graph <- function(fn, symmetrize=TRUE) {
     m@x[m@x == 2] <- 1
   }
   dimnames(m) <- c(list(as.character(1:nrow(m))), list(as.character(1:nrow(m))))
-  m
+  as(as(m, "matrix.csr"), "dgRMatrix")
 }
 

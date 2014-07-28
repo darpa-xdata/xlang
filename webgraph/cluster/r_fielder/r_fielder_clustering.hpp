@@ -22,29 +22,33 @@ SEXP graph_to_dgRMatrix(graph_t g) {
   S4 sp_mat(sp_mat_call.eval());
   IntegerVector dims(2);
   dims[0] = dims[1] = g.numNodes;
-  IntegerVector p(g.numRowPtrs);
-  copy(g.rowValueOffsets, g.rowValueOffsets+g.numRowPtrs, p.begin());
-  IntegerVector j(g.numValues);
-  copy(g.colOffsets, g.colOffsets+g.numValues, j.begin());
-  NumericVector x(g.numValues);
-  copy(g.values, g.values+g.numValues, x.begin());
+  IntegerVector p(g.numNodes+1);
+  copy(g.rowOffsets, g.rowOffsets+g.numNodes+1, p.begin());
+  IntegerVector j(g.numEdges);
+  copy(g.colIndices, g.colIndices+g.numEdges, j.begin());
+  NumericVector x(g.numEdges);
+  copy(g.edgeValues, g.edgeValues+g.numEdges, x.begin());
   sp_mat.slot("Dim") = dims;
   sp_mat.slot("p") = p;
   sp_mat.slot("j") = j;
   sp_mat.slot("x") = x;
-  CharacterVector row_names(g.numNodes);
-  CharacterVector col_names(g.numNodes);
-  for (int i=0; i < g.numNodes; ++i)
+  if (g.nodeNames) 
   {
-    row_names[i] = col_names[i] = g.nodeNames[i];
+    CharacterVector row_names(g.numNodes);
+    CharacterVector col_names(g.numNodes);
+    for (int i=0; i < g.numNodes; ++i)
+    {
+      row_names[i] = col_names[i] = g.nodeNames[i];
+    }
+    List dim_names(2);
+    dim_names[0] = row_names;
+    dim_names[1] = col_names;
+    sp_mat.slot("Dimnames") = dim_names;
   }
-  List dim_names(2);
-  dim_names[0] = row_names;
-  dim_names[1] = col_names;
-  sp_mat.slot("Dimnames") = dim_names;
   return sp_mat;
 }
 
+/*
 SEXP graph_to_matrix_csr(graph_t g) {
   Language sp_mat_call("new", "matrix.csr");
   S4 sp_mat(sp_mat_call.eval());
@@ -66,18 +70,18 @@ SEXP graph_to_matrix_csr(graph_t g) {
   sp_mat.slot("ia") = p;
   sp_mat.slot("ja") = j;
   sp_mat.slot("ra") = x;
-/*
-  for (int i=0; i < g.numNodes; ++i)
-  {
-    row_names[i] = col_names[i] = g.nodeNames[i];
-  }
-  List dim_names(2);
-  dim_names[0] = row_names;
-  dim_names[1] = col_names;
-  sp_mat.slot("Dimnames") = dim_names;
-*/
+
+//  for (int i=0; i < g.numNodes; ++i)
+//  {
+//    row_names[i] = col_names[i] = g.nodeNames[i];
+//  }
+//  List dim_names(2);
+//  dim_names[0] = row_names;
+//  dim_names[1] = col_names;
+//  sp_mat.slot("Dimnames") = dim_names;
   return sp_mat;
 }
+*/
 
 char** strings_to_cstrings(const vector<string> &cv) {
   char** ret = (char**)malloc(sizeof(char*) * cv.size());
@@ -104,25 +108,39 @@ typename RcppVecType::init_type get_first(SEXPType s) {
   return r_vec[0];
 }
 
-graph_t SEXP_to_graph(const List &s) {
+graph_t SEXP_to_graph(const List &s, bool with_dimnames=false) {
   graph_t g;
   g.numNodes = get_first<IntegerVector>(s["numNodes"]);
-  vector<string> strs;
-  stringstream ss;
-  for (int i=0; i < g.numNodes; ++i) {
-    ss << i;
-    strs.push_back(ss.str());
+  if (with_dimnames) {
+    vector<string> strs;
+    stringstream ss;
+    for (int i=0; i < g.numNodes; ++i) {
+      ss << i;
+      strs.push_back(ss.str());
+    }
+    g.nodeNames = strings_to_cstrings(strs);
+  } else {
+    g.nodeNames = NULL;
   }
-  g.nodeNames = strings_to_cstrings(strs);
-  g.numValues = get_first<IntegerVector>(s["numValues"]);
-  g.values = copy_to_c_type<NumericVector>(s["values"]);
-  g.numRowPtrs = get_first<IntegerVector>(s["numRowPtrs"]);
-  g.rowValueOffsets = copy_to_c_type<IntegerVector>(s["rowValueOffsets"]);
-  g.colOffsets = copy_to_c_type<IntegerVector>(s["colOffsets"]);
+  g.numEdges = get_first<IntegerVector>(s["numEdges"]);
+  g.edgeValues = copy_to_c_type<NumericVector>(s["edgeValues"]);
+  g.rowOffsets = copy_to_c_type<IntegerVector>(s["rowOffsets"]);
+  g.colIndices = copy_to_c_type<IntegerVector>(s["colIndices"]);
   return g;
 }
 
 extern "C" {
+
+graph_t load_snap_graph_from_r(RInside &R, string file_name) {
+  SEXP ans;
+  graph_t g;
+  R["fn"] = file_name;
+  R.parseEval("dgRMatrix_to_list(import_snap_graph(fn))", ans);
+  g = SEXP_to_graph(ans);
+  R.parseEvalQ("rm(\"fn\")");
+  return g;
+}
+
 derived_graph_and_annotation_t td_fielder_cluster(RInside &R,graph_t &g,int k) {
   derived_graph_and_annotation_t ret;
   SEXP ans;
@@ -136,6 +154,14 @@ derived_graph_and_annotation_t td_fielder_cluster(RInside &R,graph_t &g,int k) {
   ret.cluster_assignments = copy_to_c_type<IntegerVector>(l["clusters"]);
   return ret;
 }
+
+void write_graph(RInside &R, graph_t &g, string png_file_name) {
+  R["m"] = graph_to_dgRMatrix(g);
+  R["fn"] = png_file_name;
+  R.parseEvalQ("write_adjacency_matrix(m, fn)");
+  R.parseEvalQ("rm(\"m\", \"fn\")");
+}
+
 }
 
 #endif //R_FIELDER_CLUSTERING_HPP
