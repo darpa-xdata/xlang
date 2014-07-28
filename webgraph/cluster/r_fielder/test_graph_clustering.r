@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
 
-require(optparse, quietly=TRUE)
-require(Matrix, quietly=TRUE)
-require(methods, quietly=TRUE)
-require(SparseM, quietly=TRUE, warn.conflicts=FALSE)
+library(optparse, quietly=TRUE)
+library(Matrix, quietly=TRUE)
+library(methods, quietly=TRUE)
+library(SparseM, quietly=TRUE, warn.conflicts=FALSE)
 source("graph_cluster.r")
 
 option_list <- list(

@@ -1,7 +1,7 @@
-require(IRL, quietly=TRUE)
-require(Matrix, quietly=TRUE)
-require(SparseM, quietly=TRUE, warn.conflicts=FALSE)
-require(igraph, quietly=TRUE)
+library(IRL, quietly=TRUE)
+library(Matrix, quietly=TRUE)
+library(SparseM, quietly=TRUE, warn.conflicts=FALSE)
+library(igraph, quietly=TRUE)
 
 clusters_from_proj_nodes <- function(proj_nodes) {
   temp <- apply(proj_nodes, 1, 
