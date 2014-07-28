@@ -8,6 +8,7 @@ GUNROCK_INC=$(GUNROCK_DIR)/gunrock
 GUNROCK_LIBDIR=$(GUNROCK_DIR)/build/lib/
 GUNROCK_LDFLAGS = -L$(GUNROCK_LIBDIR) -Wl,-rpath -Wl,$(GUNROCK_LIBDIR) -lgunrock
 
+
 PYTHON_EXE = $(shell python-config --exec-prefix)/bin/python
 PYTHON_CFLAGS = $(shell python-config --cflags) \
                -I$(shell python -c "import numpy; print(numpy.get_include())") \

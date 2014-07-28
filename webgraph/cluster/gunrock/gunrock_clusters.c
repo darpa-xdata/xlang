@@ -83,14 +83,18 @@ typedef struct {
 void* _parallel_mergesort_entry(void* arg)
 {
   arg_t *arg_cast = (arg_t*)arg;
+  printf("Calling _mergesort_ij_by_col(%d, %d)\n", arg_cast->ij_mat, arg_cast->num_edges);
   _mergesort_ij_by_col(arg_cast->ij_mat, arg_cast->num_edges);
+  printf("done _mergesort_ij_by_col(%d, %d)\n", arg_cast->ij_mat, arg_cast->num_edges);
   return NULL;
 }
 
 void* _parallel_merge_entry(void* arg)
 {
   arg_t *arg_cast = (arg_t*)arg;
+  printf("calling _merge_ij_by_col(%d, %d, %d);\n", arg_cast->ij_mat, arg_cast->num_left, arg_cast->num_right);
   _merge_ij_by_col(arg_cast->ij_mat, arg_cast->num_left, arg_cast->num_right);
+  printf("done _merge_ij_by_col(%d, %d, %d);\n", arg_cast->ij_mat, arg_cast->num_left, arg_cast->num_right);
   return NULL;
 }
 
@@ -131,7 +135,7 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
   }
 
 
-  for ( num_threads >>= 1; num_threads > 1; num_threads >>= 1){
+  for ( num_threads >>= 1; num_threads > 0; num_threads >>= 1){
     edges_per_thread = num_edges / num_threads;
     
     int lefts[num_threads];
@@ -141,10 +145,41 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
     for (int idx=0; idx < num_threads; ++idx){
       edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1 
 	                                           : edges_per_thread; 
-      lefts[idx] = edges[idx] / 2;
-      rights[idx] = edges[idx] - lefts[idx];
+      rights[idx] = edges[idx] / 2;
+      lefts[idx] = edges[idx] - rights[idx];
       offsets[idx] = (idx > 0) ? edges[idx - 1] + edges[idx] : 0;
     }
+    printf("lefts: ");
+    printf("{ ");
+    for(int i=0; i < num_threads; ++i) {
+      printf("%d", lefts[i]);
+      if (i < num_threads - 1)
+	printf(", ");
+      else
+	printf("}");
+    }
+    printf("\n");
+    printf("rights: ");
+    printf("{ ");
+    for(int i=0; i < num_threads; ++i) {
+      printf("%d", rights[i]);
+      if (i < num_threads - 1)
+	printf(", ");
+      else
+	printf("}");
+    }
+    printf("\n");
+    printf("offsets: ");
+    printf("{ ");
+    for(int i=0; i < num_threads; ++i) {
+      printf("%d", offsets[i]);
+      if (i < num_threads - 1)
+	printf(", ");
+      else
+	printf("}");
+    }
+    printf("\n");
+
 
 
     for (int idx=0; idx < num_threads; ++idx){
@@ -169,7 +204,6 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
     }
   }
 
-  _merge_ij_by_col(ij_mat, num_edges/2, num_edges - (num_edges/2));  
   return 0;  
 }
 

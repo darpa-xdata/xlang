@@ -216,6 +216,7 @@ int main(int argc, char** argv)
   int ret = 0;
   ret |= test_csr_to_ij();
   ret |= test_sort_ij_by_col();
+  ret |= test_parallel_sort_ij_by_col();
   ret |= test_gunrock_graph_convert();
   ret |= test_gunrock_topk();
   return ret;
