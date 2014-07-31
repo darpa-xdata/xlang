@@ -159,6 +159,8 @@ typedef struct _td_env_t {
     void (*invokeGraph0)(graph_t *out, char *f);
     void (*invokeGraph1)(graph_t *out, char *f, graph_t *in);
     void (*invokeGraph2)(graph_t *out, char *f, graph_t *in, int k);
+    void (*invokeGraphAndCSC)(td_val_t *out, char *f, graph_t *in_graph, 
+			      int *in_csc_offsets, int *in_csc_indics);
 
     // acquire and release references to owned objects
     void (*retain)(void *obj);
