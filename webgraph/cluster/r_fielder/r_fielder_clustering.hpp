@@ -16,6 +16,10 @@ typedef struct {
   int *cluster_assignments;
 } derived_graph_and_annotation_t;
 
+typedef struct {
+  char *nodes;
+  char *links;
+} force_directed_graph_json_t;
 
 SEXP graph_to_dgRMatrix(graph_t g) {
   Language sp_mat_call("new", "dgRMatrix");
@@ -160,6 +164,26 @@ void write_graph(RInside &R, graph_t &g, string png_file_name) {
   R["fn"] = png_file_name;
   R.parseEvalQ("write_adjacency_matrix(m, fn)");
   R.parseEvalQ("rm(\"m\", \"fn\")");
+}
+
+force_directed_graph_json_t get_fdg_json(RInside &R, graph_t &g) {
+  R["m"] = graph_to_dgRMatrix(g);
+  SEXP ans;
+  R.parseEval("create_fdg_json(m)", ans);
+  R.parseEvalQ("rm(\"m\")");
+  CharacterVector cv(ans);
+  char *nodes, *links;
+  string node_string = String(cv[0]);
+  string link_string = String(cv[1]);
+  nodes = (char*)malloc(sizeof(char)*(node_string.size()+1));
+  links = (char*)malloc(sizeof(char)*(link_string.size()+1));
+  strncpy(nodes, node_string.c_str(), node_string.size()+1);
+  strncpy(links, link_string.c_str(), link_string.size()+1);
+
+  force_directed_graph_json_t ret;
+  ret.nodes = nodes;
+  ret.links = links;
+  return ret;
 }
 
 }

@@ -65,8 +65,14 @@ int main(int argc, char** argv)
   // load_graph(format, arc_file, index_file, &output_graph);
   cout << "Creating the fielder clusters.\n";
   ga = td_fielder_cluster(R, input_graph, max_cluster);
-  cout << "Writing the output to " << output_png_file << ".\n";
-  write_graph(R, ga.graph, output_png_file); 
+  //cout << "Writing the output to " << output_png_file << ".\n";
+  //write_graph(R, ga.graph, output_png_file); 
+  cout << "Writing out the json objects\n";
+  cout << "Nodes are:\n";
+  force_directed_graph_json_t fdg = get_fdg_json(R, ga.graph);
+  cout << fdg.nodes << endl;
+  cout << "Links are:\n";
+  cout << fdg.links << endl;
   return 0;
 
 }

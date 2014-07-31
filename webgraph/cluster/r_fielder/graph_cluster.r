@@ -2,6 +2,8 @@ library(IRL, quietly=TRUE)
 library(Matrix, quietly=TRUE)
 library(SparseM, quietly=TRUE, warn.conflicts=FALSE)
 library(igraph, quietly=TRUE)
+library(d3Network, quietly=TRUE)
+library(foreach, quietly=TRUE)
 
 clusters_from_proj_nodes <- function(proj_nodes) {
   temp <- apply(proj_nodes, 1, 
@@ -91,6 +93,51 @@ write_adjacency_matrix <- function(m, output_png_file_name) {
   dev.off()
 }
 
+create_nodes_and_links <- function(m) {
+  if (!is.null(colnames(m))) {
+    node_names <- data.frame(list(name=colnames(m), group=1:nrow(m)))
+  } else {
+    node_names <- data.frame(list(name=as.character(1:(nrow(m))), 
+                                  group=1:nrow(m)))
+  }
+  links <- foreach(i=1:(nrow(m)-1), .combine=rbind) %do% {
+    t <- which(m[i,] > 0)
+    targets <- t[which(t > i)]
+    data.frame(list(source=rep(i, length(targets)), target=targets, 
+               value=rep(0.2, length(targets))))
+  }
+  links$source <- links$source-1
+  links$target <- links$target-1
+  list(links=links, nodes=node_names)
+}
+
+create_fdg <- function(m, open=FALSE) {
+  l <- create_nodes_and_links(m)
+  links <- l$links
+  node_names <- l$nodes
+  tc <- textConnection("html_text", "w")
+  d3ForceNetwork(Links = links, Nodes = node_names,
+                 Source = "source", Target = "target",
+                 Value = "value", NodeID = "name",
+                 Group = "group", width = 550, height = 400,
+                 opacity = 0.9, zoom = TRUE, file=tc)
+  close(tc)
+  if (open) {
+    tf <- paste(tempfile(), ".html", sep="")
+    write(html_text, tf)
+    system(paste("open", tf))
+  }
+  paste(html_text, collapse="\n")
+}
+
+create_fdg_json <- function(m) {
+  l <- create_nodes_and_links(m)
+  ret <- c(d3Network:::toJSONarray(l$nodes),
+           d3Network:::toJSONarray(l$links))
+  names(ret) <- c("nodes", "links")
+  ret
+}
+
 import_snap_graph <- function(fn, symmetrize=TRUE) {
   x <- read.table(fn, skip=5, header=FALSE)
   # Get rid of the diagonals
@@ -105,4 +152,5 @@ import_snap_graph <- function(fn, symmetrize=TRUE) {
   dimnames(m) <- c(list(as.character(1:nrow(m))), list(as.character(1:nrow(m))))
   as(as(m, "matrix.csr"), "dgRMatrix")
 }
+
 
