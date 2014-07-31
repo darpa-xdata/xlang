@@ -130,12 +130,19 @@ typedef struct {
     int numNodes, numEdges;
     char** nodeNames;  // size numNodes
     double* edgeValues; // size numEdges
+    double* nodeValues;  // size numNodes
 
     // CSR encoding 
     int* rowOffsets; // size numNodes+1
     int* colIndices; // size numEdges
 } graph_t;
 
+typedef struct {
+  graph_t* orig_graph;
+  graph_t* derived_graph;
+  int *node_mapping; // size orig_graph->numNodes
+                     // node_mapping[ orig node idx ] -> derived nodes idx
+} derived_graph_t;
 
 typedef struct _td_env_t {
     char *name;
