@@ -18,7 +18,7 @@ clusters_from_proj_nodes <- function(proj_nodes) {
 # Return the elements of the kth cluster
 fielder_cluster <- function(m, k, use_irlba=TRUE) {
   if (use_irlba) {
-    fit <- irlba(m, nu=k, nv=k)
+    fit <- irlba(m, nu=k, nv=k, dU=rep(1, nrow(m)), ds=1, dV=colMeans(m))
   } else {
     fit <- svd(m)
   }
