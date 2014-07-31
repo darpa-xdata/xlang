@@ -32,7 +32,7 @@ def neighborhood_from_idx(node_idx):
     out_nodes = CSR_INDICES[CSR_OFFSETS[node_idx]: CSR_OFFSETS[node_idx + 1]]
     in_nodes = CSC_INDICES[CSC_OFFSETS[node_idx]: CSC_OFFSETS[node_idx + 1]]
     return {"id": node_idx, "name": NODES[node_idx], 
-            "in": list(in_nodes), "out": list(out_nodes)}
+            "in": map(int, in_nodes), "out": map(int, out_nodes)}
     
 
 def neighborhood_from_name(node_name):
@@ -50,9 +50,16 @@ def site():
 
 @app.route('/subgraph', methods=['GET'])
 def subgraph():
-    ids = request.args.get('ids')
-    ids = map(int, ids.split(','))
-    ret_dict = map(neighborhood_from_idx, ids)
+    try:
+        ids = request.args.get('ids')
+        ids = map(int, ids.split(','))
+        print("ids:", ids)
+        ret_dict = map(neighborhood_from_idx, ids)
+        print("ret_dict:", ret_dict)
+        print("json:", json.dumps(ret_dict))
+    except:
+        print_exc()
+        import pdb; pdb.set_trace()
     return json.dumps(ret_dict)
 
 
@@ -64,16 +71,34 @@ def parse_cluster_file(filename):
     pass
 
 
+def run_app(nodes, csr_offsets, csr_indices, csc_offsets, csc_indices):
+    try:
+        import sys;
+        sys.argv = ["webgraph_app.py"]
+        global NODES, CSR_OFFSETS, CSR_INDICES, CSC_OFFSETS, CSC_INDICES 
+        NODES = nodes
+        CSR_OFFSETS = csr_offsets
+        CSR_INDICES = csr_indices
+        CSC_OFFSETS = csc_offsets
+        CSC_INDICES = csc_indices
+        print("Starting app with:")
+        print("  nodes =", NODES)
+        print("  CSR_OFFSETS =", CSR_OFFSETS)
+        print("  CSR_INDICES =", CSR_INDICES)
+        print("  CSC_OFFSETS =", CSC_OFFSETS)
+        print("  CSC_INDICES =", CSC_INDICES)
+        start_app()
+    except:
+        print_exc()
+    return 0
+
+
 def run_test():
-    global NODES
+    global NODES, CSR_OFFSETS, CSR_INDICES, CSC_OFFSETS, CSC_INDICES 
     NODES = np.array(['continuum.io', 'darpa.mil', 'kitware.com', 'nasa.gov'])
-    global CSR_OFFSETS 
     CSR_OFFSETS = np.array([0, 2, 3, 5, 8])
-    global CSR_INDICES 
     CSR_INDICES = np.array([1, 2, 2, 1, 3, 0, 1, 2])
-    global CSC_OFFSETS 
     CSC_OFFSETS = np.array([0, 1, 4, 7, 8])
-    global CSC_INDICES
     CSC_INDICES = np.array([3, 0, 2, 3, 0, 1, 3, 2])
     start_app(debug=True)
 

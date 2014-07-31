@@ -385,7 +385,7 @@ void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph,
     PyObject *pFunc, *pArgs, *pValue;
 
     td_array_t node_array = { .data=in_graph->nodeNames, .length=in_graph->numNodes,
-			      .eltype=TD_INT32, .ndims=1 };
+			      .eltype=TD_INT64, .ndims=1 };
     td_val_t nodes = { .tag = TD_ARRAY, .object = &node_array };
 
     td_array_t csr_offset_array = { .data=in_graph->rowOffsets, .length=in_graph->numNodes+1,
@@ -405,31 +405,50 @@ void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph,
     td_val_t csc_indices = { .tag = TD_ARRAY, .object = &csc_indices_array };
 
     pFunc = td_py_get_callable(fname);
-    if (pFunc == NULL) return;
+    if (pFunc == NULL) {
+      printf("Error getting pyhton function: %s\n", fname);
+      return;
+    }
 
     pArgs = PyTuple_New(5);
     pValue = from_td_val(&nodes);
-    if (pValue == NULL) return;
+    if (pValue == NULL) {
+      printf("Error getting python args: nodes\n");
+      return;
+    }
+
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 0, pValue);
 
     pValue = from_td_val(&csr_offsets);
-    if (pValue == NULL) return;
+    if (pValue == NULL) {
+      printf("Error getting python args:j csr_offsets\n");
+      return;
+    }
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 1, pValue);
 
     pValue = from_td_val(&csr_indices);
-    if (pValue == NULL) return;
+    if (pValue == NULL) {
+      printf("Error getting python args: csr_indices\n");
+      return;
+    }
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 2, pValue);
 
     pValue = from_td_val(&csc_offsets);
-    if (pValue == NULL) return;
+    if (pValue == NULL) {
+      printf("Error getting python args: csc_offsets\n");
+      return;
+    }
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 3, pValue);
 
     pValue = from_td_val(&csc_indices);
-    if (pValue == NULL) return;
+    if (pValue == NULL) {
+      printf("Error getting python args: csc_indices\n");
+      return;
+    }
     /* pValue reference stolen here: */
     PyTuple_SetItem(pArgs, 4, pValue);
 
