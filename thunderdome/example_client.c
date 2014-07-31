@@ -28,6 +28,11 @@ void printGraph(graph_t* out_graph) {
 // for java, first argument can be a classpath
 int main(int argc, char *argv[])
 {
+    double v[] = { 1.0, 2.0, 3.0 };
+    // call "norm" on a Float64 3-vector
+    td_array_t a = { .data=v, .length=3, .eltype=TD_DOUBLE, .ndims=1 };
+    td_val_t av = { .tag = TD_ARRAY, .object = &a };
+
 #ifdef TD_HAS_JULIA
     // start julia
 
@@ -43,12 +48,7 @@ int main(int argc, char *argv[])
     printf("sin(3.14) = %g\n", td_double(&out));
 
 
-    // call "norm" on a Float64 3-vector
-    double v[] = { 1.0, 2.0, 3.0 };
-    td_array_t a = { .data=v, .length=3, .eltype=TD_DOUBLE, .ndims=1 };
-    td_val_t av = { .tag = TD_ARRAY, .object = &a };
     jl->invoke1(&out, "norm", &av);
-
     printf("norm([1.0,2.0,3.0]) = %g\n", td_double(&out));
 #endif
 
@@ -62,6 +62,10 @@ int main(int argc, char *argv[])
 
     py->invoke1(&out_py, "int", &arg_py);
     printf("int(2) = %d\n", td_int32(&out_py));
+
+    py->invoke1(&out_py, "numpy.linalg.norm", &av);
+    printf("numpy.linalg.norm([1.0, 2.0, 3.0]) = %g\n", td_double(&out_py));
+
 #endif
 
 #ifdef TD_HAS_JAVA

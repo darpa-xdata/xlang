@@ -13,10 +13,10 @@ UNAME_S := $(shell uname -s)
         ARCH=darwin
         LIBTYPE=dylib
         SERVER_DIR=server
-	CC=clang -std=c11
+	CC=clang -std=c11 -g -O0
     endif
-
-DEBUG = -g
+CC := /opt/local/bin/clang-mp-3.5 -g -O0
+DEBUG = -g -O0
 
 
 JULIA_BIN = $(shell dirname `which julia`)
@@ -111,7 +111,7 @@ $(LIBTD_PYTHON): td.h td_python.c $(LIBTD)
 	$(CC) $(DEBUG) -shared -fPIC td_python.o -o $@ -I$(PYTHON_LDFLAGS) ./$(LIBTD)
 
 example_python: example_client.c td.h $(LIBTD_PYTHON)
-	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 $< -o $@ ./$(LIBTD)
+	$(CC) $(DEBUG) -DTD_HAS_PYTHON=1 -DTD_PYTHON_EXE="\"$(PYTHON_EXE)\""  $< -o $@ ./$(LIBTD)
 
 clean:
 	rm -f libtd*.$(LIBTYPE) *.o
