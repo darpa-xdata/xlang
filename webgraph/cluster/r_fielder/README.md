@@ -1,6 +1,3 @@
-R Fielder Clustering 
-----
-
 # Contents of this directory
 
 1. graph_cluster.r 
