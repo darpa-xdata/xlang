@@ -15,7 +15,7 @@ RInside init_r_env(int argc, char*argv[]) {
 
 int main(int argc, char *argv[]) {
   // ga will be the derived graph with annotation
-  derived_graph_and_annotation_t ga;
+  derived_graph_t ga;
 
   // Set up R
   cout << "setting up the R environment\n";
@@ -33,23 +33,24 @@ int main(int argc, char *argv[]) {
   char c5[]={'c','i','n','q', '\0'};
   char c6[]={'s','i','x', '\0'};
   char* cs[] = {c1, c2, c3, c4, c5, c6};
-  graph_t g;
-  g.numNodes = 6;
-  g.numEdges = 19;
-  g.edgeValues = values;
-  g.rowOffsets = rp;
-  g.colIndices = ci;
-  g.nodeNames = cs;
+  graph_t *g = (graph_t*)malloc(sizeof(graph_t));
+  g->numNodes = 6;
+  g->numEdges = 19;
+  g->edgeValues = values;
+  g->rowOffsets = rp;
+  g->colIndices = ci;
+  g->nodeNames = cs;
 
   // Do the graph clustering. 
   cout << "creating the fielder clusters\n";
   ga = td_fielder_cluster(R, g, 4);
 
   // Output the results.
-  cout << "Number of nodes in derived graph is " << ga.graph.numNodes << endl;
+  cout << "Number of nodes in derived graph is " << 
+    ga.derived_graph->numNodes << endl;
   cout << "Cluster assignments for original graph are:\n";
-  for (int i=0; i < g.numNodes; ++i) {
-    cout << ga.cluster_assignments[i] <<  " ";
+  for (int i=0; i < g->numNodes; ++i) {
+    cout << ga.node_mapping[i] <<  " ";
   }
   cout << endl;
   
