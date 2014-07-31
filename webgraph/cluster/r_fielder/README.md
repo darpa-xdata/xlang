@@ -6,7 +6,7 @@
 2. test_graph_clustering.r
   - A hashbang executable R script for testing R functionality in graph_cluster.r
 3. r_fielder_clustering.hpp
-  - C code to make use of (1) from a C program 
+  - C code to make use of 1 from a C program 
   - C code to convert from R SEXP's to thunderdome's graph_t and derived_graph_t
 4. r_env_example.cpp
   - A toy application written in C that makes use of 1 and 2 to clusters a small graph.
