@@ -57,9 +57,9 @@ int main(int argc, char** argv)
   string output_png_file = "out.png";
   string snap_file_name = string(argv[2]);
   int max_cluster = atoi(argv[1]);
-  graph_t input_graph;
+  graph_t *input_graph;
   // ga will be the derived graph with annotation
-  derived_graph_and_annotation_t ga;
+  derived_graph_t ga;
   cout << "Loading " << snap_file_name << ".\n"; 
   input_graph = load_snap_graph_from_r(R, snap_file_name);
   // load_graph(format, arc_file, index_file, &output_graph);
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   //write_graph(R, ga.graph, output_png_file); 
   cout << "Writing out the json objects\n";
   cout << "Nodes are:\n";
-  force_directed_graph_json_t fdg = get_fdg_json(R, ga.graph);
+  force_directed_graph_json_t fdg = get_fdg_json(R, ga.derived_graph);
   cout << fdg.nodes << endl;
   cout << "Links are:\n";
   cout << fdg.links << endl;

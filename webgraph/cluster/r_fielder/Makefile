@@ -40,9 +40,6 @@ all: example
 example:	r_env_example.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) r_env_example.cpp $(LDLIBS) -o r_env_example
 
-run:			$(programs)
-			@for p in $(programs); do echo; echo "Running $$p:"; ./$$p; done
-
 clean:
 			rm -vf r_env_example
 			rm -vrf *.dSYM
