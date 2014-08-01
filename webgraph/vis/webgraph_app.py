@@ -28,12 +28,21 @@ CSC_OFFSETS = None
 CSC_INDICES = None
 
 
+def subgraph_from_ids(node_ids):
+    node_ids = set(node_ids)
+    return [ {"id": node_id,
+              "name": NODES[node_id],
+              "out": list(node_ids.intersection(map(int, CSR_INDICES[CSR_OFFSETS[node_id]: CSR_OFFSETS[node_id + 1]]))),
+              "in": list(node_ids.intersection(map(int,CSC_INDICES[CSC_OFFSETS[node_id]: CSC_OFFSETS[node_id + 1]]))),
+              } for node_id in node_ids
+           ]
+
+
 def neighborhood_from_idx(node_idx):
     out_nodes = CSR_INDICES[CSR_OFFSETS[node_idx]: CSR_OFFSETS[node_idx + 1]]
     in_nodes = CSC_INDICES[CSC_OFFSETS[node_idx]: CSC_OFFSETS[node_idx + 1]]
     return {"id": node_idx, "name": NODES[node_idx], 
             "in": map(int, in_nodes), "out": map(int, out_nodes)}
-    
 
 def neighborhood_from_name(node_name):
     node_idx = NODES.searchsorted(node_name)
@@ -42,25 +51,48 @@ def neighborhood_from_name(node_name):
     else:
         return neighborhood_from_idx(node_idx)
 
+@app.route('/top_k')
+def top_k():
+    top_k = request.args.get('top_k', -1)
+    ids = request.args.get('ids')
+    ids = map(int, ids.split(','))
+    
 
 @app.route('/site', methods=['GET'])
 def site():
-    return json.dumps(neighborhood_from_name(request.args.get("name")))
-    
-
-@app.route('/subgraph', methods=['GET'])
-def subgraph():
+    ret = {}
     try:
-        ids = request.args.get('ids')
-        ids = map(int, ids.split(','))
-        print("ids:", ids)
-        ret_dict = map(neighborhood_from_idx, ids)
-        print("ret_dict:", ret_dict)
-        print("json:", json.dumps(ret_dict))
+        top_k = request.args.get('top_k', -1)
+        #XXX if top_k is not -1, then give only the subgraph of the top_k in the graph
+        name = str(request.args.get("name"))
+        try:
+            name = int(name)
+            ret = neighborhood_from_idx(name)
+        except ValueError:          
+            ret = neighborhood_from_name(name)
+        print("Returning:", ret)
+        if len(ret) == 0:
+            raise
     except:
         print_exc()
         import pdb; pdb.set_trace()
-    return json.dumps(ret_dict)
+    return json.dumps(ret)
+
+@app.route('/subgraph', methods=['GET'])
+def subgraph():
+    ret = []
+    try:
+        ids = request.args.get('ids')
+        ids = map(int, ids.strip(',').split(','))
+        top_k = request.args.get('top_k', -1)
+        print("ids:", ids)
+        ret = subgraph_from_ids(ids)
+        print("ret:", ret)
+        print("json:", json.dumps(ret))
+    except:
+        print_exc()
+        import pdb; pdb.set_trace()
+    return json.dumps(ret)
 
 
 def start_app(debug=False):
@@ -76,7 +108,9 @@ def run_app(nodes, csr_offsets, csr_indices, csc_offsets, csc_indices):
         import sys;
         sys.argv = ["webgraph_app.py"]
         global NODES, CSR_OFFSETS, CSR_INDICES, CSC_OFFSETS, CSC_INDICES 
-        NODES = nodes
+        # Use hack to give node names as ints until I figure out how to make strings work in thunderdome
+        #NODES = nodes
+        NODES = np.arange(len(nodes)).astype(str)
         CSR_OFFSETS = csr_offsets
         CSR_INDICES = csr_indices
         CSC_OFFSETS = csc_offsets
