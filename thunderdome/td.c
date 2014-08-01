@@ -75,6 +75,8 @@ float    td_float(td_val_t *v)  { return *(float*)td_dataptr(v); }
 double   td_double(td_val_t *v) { return *(double*)td_dataptr(v); }
 void    *td_pointer(td_val_t *v) { return *(void**)td_dataptr(v); }
 
+td_val_t     td_convert_char_array_to_td_utf8_array(td_val_t *out_array, char** in_chararray); 
+
 static size_t type_sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8, 4, 8, sizeof(void*) };
 
 size_t td_type_size(td_tag_t tag)

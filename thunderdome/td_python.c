@@ -378,6 +378,92 @@ void td_py_invoke2(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2)
     Py_DECREF(pValue);
 }
 
+void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph, 
+				int *in_csc_offsets, int *in_csc_indices)
+			       
+{
+    PyObject *pFunc, *pArgs, *pValue;
+
+    td_array_t node_array = { .data=in_graph->nodeNames, .length=in_graph->numNodes,
+			      .eltype=TD_INT64, .ndims=1 };
+    td_val_t nodes = { .tag = TD_ARRAY, .object = &node_array };
+
+    td_array_t csr_offset_array = { .data=in_graph->rowOffsets, .length=in_graph->numNodes+1,
+				    .eltype=TD_INT32, .ndims=1 };
+    td_val_t csr_offsets = { .tag = TD_ARRAY, .object = &csr_offset_array };
+ 
+    td_array_t csr_indices_array = { .data=in_graph->colIndices, .length=in_graph->numEdges,
+				     .eltype=TD_INT32, .ndims=1 };
+    td_val_t csr_indices = { .tag = TD_ARRAY, .object = &csr_indices_array };
+ 
+    td_array_t csc_offset_array = { .data=in_csc_offsets, .length=in_graph->numNodes+1,
+				    .eltype=TD_INT32, .ndims=1 };
+    td_val_t csc_offsets = { .tag = TD_ARRAY, .object = &csc_offset_array };
+
+    td_array_t csc_indices_array = { .data=in_csc_indices, .length=in_graph->numEdges,
+				     .eltype=TD_INT32, .ndims=1 };
+    td_val_t csc_indices = { .tag = TD_ARRAY, .object = &csc_indices_array };
+
+    pFunc = td_py_get_callable(fname);
+    if (pFunc == NULL) {
+      printf("Error getting pyhton function: %s\n", fname);
+      return;
+    }
+
+    pArgs = PyTuple_New(5);
+    pValue = from_td_val(&nodes);
+    if (pValue == NULL) {
+      printf("Error getting python args: nodes\n");
+      return;
+    }
+
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 0, pValue);
+
+    pValue = from_td_val(&csr_offsets);
+    if (pValue == NULL) {
+      printf("Error getting python args:j csr_offsets\n");
+      return;
+    }
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 1, pValue);
+
+    pValue = from_td_val(&csr_indices);
+    if (pValue == NULL) {
+      printf("Error getting python args: csr_indices\n");
+      return;
+    }
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 2, pValue);
+
+    pValue = from_td_val(&csc_offsets);
+    if (pValue == NULL) {
+      printf("Error getting python args: csc_offsets\n");
+      return;
+    }
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 3, pValue);
+
+    pValue = from_td_val(&csc_indices);
+    if (pValue == NULL) {
+      printf("Error getting python args: csc_indices\n");
+      return;
+    }
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, 4, pValue);
+
+  
+    pValue = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pFunc);
+    Py_DECREF(pArgs);
+    if (pValue == NULL) {
+        fprintf(stderr, "Error in Python call %s\n", fname);
+        return;
+    }
+    to_td_val(out, pValue);
+    Py_DECREF(pValue);
+}
+
 void td_py_eval(td_val_t *out, char *str)
 {
     PyObject *v = PyRun_String(str, 0, NULL, NULL);
@@ -434,7 +520,7 @@ void td_py_init(char *homedir)
     env->invoke1 = &td_py_invoke1;
     env->invoke2 = &td_py_invoke2;
     //env->invoke3
-
+    env->invokeGraphAndCSC = &td_py_invoke_graph_and_csc;
     //env->retain
     //env->release
 
