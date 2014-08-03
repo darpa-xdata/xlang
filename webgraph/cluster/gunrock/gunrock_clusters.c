@@ -7,7 +7,6 @@
 // Functions to convert csr graph to csc graph
 ///////////////////////////////////////////////////////////////////////////////
 
-
 int _compare_ij_cols_idx(int* ij_mat, int a_idx, int b_idx)
 {
   if ((ij_mat[2*a_idx + 1] > ij_mat[2*b_idx + 1]) ||
@@ -55,13 +54,13 @@ int _merge_ij_by_col(int* ij_mat, int num_a_edges,  int num_b_edges)
 }
 
 
-// Using a simple inplace mergesort since it is stable and the csr format is 
+// Using a simple inplace mergesort since it is stable and the csr format is
 // already sorted by row
 int _mergesort_ij_by_col(int* ij_mat, int num_edges)
 {
   if (num_edges <= 1){
     return 0;
-  }  
+  }
   int num_left = num_edges / 2;
   int num_right = num_edges - num_left;
 
@@ -108,8 +107,8 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
 
   int edges[num_threads];
   for (int idx=0; idx < num_threads; ++idx)
-    edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1 
-                                                 : edges_per_thread; 
+    edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1
+                                                 : edges_per_thread;
 
   for (int idx=0; idx < num_threads; ++idx){
     args[idx].num_edges = edges[idx];
@@ -135,13 +134,13 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
 
   for ( num_threads >>= 1; num_threads > 0; num_threads >>= 1){
     edges_per_thread = num_edges / num_threads;
-    
+
     int lefts[num_threads];
     int rights[num_threads];
     int offsets[num_threads];
     for (int idx=0, cum=0; idx < num_threads; ++idx){
-      edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1 
-	                                           : edges_per_thread; 
+      edges[idx] = (idx < num_edges % num_threads) ? edges_per_thread + 1
+	                                           : edges_per_thread;
       rights[idx] = edges[idx] / 2;
       lefts[idx] = edges[idx] - rights[idx];
       offsets[idx] = cum;
@@ -166,24 +165,24 @@ int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges)
       if(rc){
 	  printf("ERROR; return code from pthread_join() is %d\n", rc);
 	  exit(-1);
-      } 
+      }
     }
   }
 
-  return 0;  
+  return 0;
 }
 
 #endif // USE_PTHREADS
 
 
-int _csr_to_ij(int num_nodes, int num_edges, 
-	       int* csr_row_offsets, int *csr_col_indicies, 
+int _csr_to_ij(int num_nodes, int num_edges,
+	       int* csr_row_offsets, int *csr_col_indicies,
 	       int* ij_mat)
 {
 
   int curr_edge = 0;
   for (int row = 0; row < num_nodes; ++row) {
-    for (int col_idx = csr_row_offsets[row]; col_idx < csr_row_offsets[row+1]; 
+    for (int col_idx = csr_row_offsets[row]; col_idx < csr_row_offsets[row+1];
 	 ++col_idx, ++curr_edge) {
       int col = csr_col_indicies[col_idx];
       ij_mat[2*curr_edge] = row;
@@ -194,7 +193,7 @@ int _csr_to_ij(int num_nodes, int num_edges,
 }
 
 
-int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat, 
+int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 	       int* csc_col_offsets, int* csc_row_indices)
 {
   int curr_edge, curr_col, row, col;
@@ -234,7 +233,8 @@ int _csr_to_csc(int num_nodes, int num_edges,
 }
 
 
-int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
+int td_to_gunrock(
+  graph_t* td_graph, struct GunrockGraph* gr_graph, bool csc_convert)
 {
   printf("------> Converting Thunderdome graph to GunRock graph\n");
 
@@ -244,15 +244,19 @@ int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 
   int* csc_col_offsets = (int*) malloc(sizeof(int) * num_nodes + 1);
   int* csc_row_indices = (int*) malloc(sizeof(int) * num_edges);
-  _csr_to_csc(num_nodes, num_edges, td_graph->rowOffsets, td_graph->colIndices,
-	      csc_col_offsets, csc_row_indices);
 
   gr_graph->num_nodes = num_nodes;
   gr_graph->num_edges = num_edges;
   gr_graph->row_offsets = td_graph->rowOffsets;
   gr_graph->col_indices = td_graph->colIndices;
-  gr_graph->col_offsets = (void*)csc_col_offsets;
-  gr_graph->row_indices = (void*)csc_row_indices;
+
+  if (csc_convert)
+  {
+    _csr_to_csc(num_nodes, num_edges, td_graph->rowOffsets, td_graph->colIndices,
+      csc_col_offsets, csc_row_indices);
+    gr_graph->col_offsets = (void*)csc_col_offsets;
+    gr_graph->row_indices = (void*)csc_row_indices;
+  }
 
   return 0;
 }
@@ -261,10 +265,13 @@ int td_to_gunrock(graph_t* td_graph, struct GunrockGraph* gr_graph)
 // Functions to invoke gunrock clustering algorithms
 ///////////////////////////////////////////////////////////////////////////////
 
-
-int gunrock_topk(graph_t* input_td_graph, int top_nodes, int* node_ids, int* in_degrees, int* out_degrees)
+///////////////////////////////////////////////////////////////////////////////
+// Gunrock Top K Degree Centrality
+int gunrock_topk(
+    graph_t* input_td_graph, int top_nodes,
+    int* node_ids, int* in_degrees, int* out_degrees)
 {
-  printf("GunRock TopK\n");
+  printf("Gunrock TopK\n");
 
   struct GunrockGraph gr_input;
   struct GunrockGraph gr_output;
@@ -275,7 +282,7 @@ int gunrock_topk(graph_t* input_td_graph, int top_nodes, int* node_ids, int* in_
   struct GunrockConfig configs;
   configs.top_nodes = top_nodes;
 
-  td_to_gunrock(input_td_graph, &gr_input);
+  td_to_gunrock(input_td_graph, &gr_input, true);
 
   // run topk calculations
   printf("------> Running gunrock_topk\n");
@@ -292,5 +299,44 @@ int gunrock_topk(graph_t* input_td_graph, int top_nodes, int* node_ids, int* in_
   if (gr_input.row_indices) free(gr_input.row_indices);
 
   printf("-----> Finished gunrock_topk\n");
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Gunrock Page Rank
+int gunrock_pr(
+    graph_t* input_td_graph, int top_nodes, int* node_ids, float* page_rank)
+{
+  printf("Gunrock Page Rank\n");
+
+  struct GunrockGraph gr_input;
+  struct GunrockGraph gr_output;
+  struct GunrockDataType data_type;
+  data_type.VTXID_TYPE = VTXID_INT;
+  data_type.SIZET_TYPE = SIZET_INT;
+  data_type.VALUE_TYPE = VALUE_FLOAT;
+
+  struct GunrockConfig configs;
+  configs.device    = 0;         //!< use default gpu device
+  configs.top_nodes = top_nodes; //!< number of top ranked nodes
+  configs.delta     = 0.85f;     //!< default delta for page rank
+  configs.error     = 0.01f;     //!< default error threshold
+  configs.max_iter  = 20;        //!< default max number of iterations
+  configs.src_mode  = manually;  //!< set source node manually
+  configs.src_node  = -1;        //!< source node to begin page rank
+
+  td_to_gunrock(input_td_graph, &gr_input, false);
+
+  // run page rank calculations
+  printf("------> Running gunrock page rank\n");
+  gunrock_pr_func(
+      &gr_output,
+      node_ids,   //!< return top page ranked node ids
+      page_rank,  //!< return top page ranked rank values
+      &gr_input,
+      configs,
+      data_type);
+
+  printf("-----> Finished gunrock page rank\n");
   return 0;
 }

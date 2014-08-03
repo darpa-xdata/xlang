@@ -2,11 +2,11 @@
 #include <string.h>
 
 // Forward declaration for testing.
-int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat, 
-	       int* csc_col_offsets, int* csc_row_indices);
-int _csr_to_ij(int num_nodes, int num_edges, 
-	       int* csr_row_offsets, int *csr_col_indicies, 
-	       int* ij_mat);
+int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
+         int* csc_col_offsets, int* csc_row_indices);
+int _csr_to_ij(int num_nodes, int num_edges,
+         int* csr_row_offsets, int *csr_col_indicies,
+         int* ij_mat);
 int _mergesort_ij_by_col(int* ij_mat, int num_edges);
 int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges);
 
@@ -19,7 +19,7 @@ int _create_simple_td_graph(graph_t *graph)
 
   unsigned int row_offsets[8] = {0,3,6,9,11,14,15,15};
   int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
-  
+
   graph->numNodes = num_nodes;
   graph->numEdges = num_edges;
   graph->rowOffsets = (int*) malloc(sizeof(int) * num_nodes+1);
@@ -28,7 +28,7 @@ int _create_simple_td_graph(graph_t *graph)
   memcpy(graph->rowOffsets, (int*)row_offsets, (num_nodes+1) * sizeof(int));
   memcpy(graph->colIndices, (int*)col_indices, num_edges * sizeof(int));
 
-  return 0;  
+  return 0;
 }
 
 int _destroy_simple_td_graph(graph_t *graph)
@@ -53,7 +53,7 @@ int _print_small_array(int* arr, int len){
 
 int _compare_arrays(int* a, int* b, int len){
   int ret = 1;
-  for (int idx=0; idx<len; ++idx) 
+  for (int idx=0; idx<len; ++idx)
     ret &= (a[idx] == b[idx]);
   return !ret;
 }
@@ -68,7 +68,7 @@ int test_csr_to_ij()
   int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
   int ij_mat[30];
   int ij_expected[30] = { 0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
-		          5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+              5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
 
   _csr_to_ij(num_nodes, num_edges, (int*) row_offsets, (int*) col_indices, ij_mat);
   if (! _compare_arrays(ij_mat, ij_expected, 30) ){
@@ -96,7 +96,7 @@ int test_csr_to_ij()
   printf("------> ");
   _print_small_array(ij_expected, 30);
   printf("\n");
-  
+
   return 1;
 }
 
@@ -106,14 +106,14 @@ int test_sort_ij_by_col()
   int num_nodes = 7;
   int num_edges = 15;
 
-  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
-		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
-  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
-		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
+         5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
+         5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
 
-  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3, 
-			 5, 4, 5, 3, 6, 4, 6, 5, 6};
-  
+  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3,
+       5, 4, 5, 3, 6, 4, 6, 5, 6};
+
   _mergesort_ij_by_col(ij_mat, num_edges);
 
   if (! _compare_arrays(ij_mat, ij_expected, 30) ){
@@ -138,21 +138,21 @@ int test_sort_ij_by_col()
   return 1;
 }
 
-
+/*
 int test_parallel_sort_ij_by_col()
 {
   printf("Test Parallel Sort IJ by Col\n");
   int num_nodes = 7;
   int num_edges = 15;
 
-  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
-		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
-  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3, 
-		     5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
+         5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
+  int ij_mat_orig[30] = {0, 1, 0, 2, 0, 3, 1, 0, 1, 2, 1, 4, 2, 3, 2, 4, 2, 5, 3,
+         5, 3, 6, 4, 2, 4, 5, 4, 6, 5, 6};
 
-  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3, 
-			 5, 4, 5, 3, 6, 4, 6, 5, 6};
-  
+  int ij_expected[30] = {1, 0, 0, 1, 0, 2, 1, 2,  4, 2, 0, 3,  2, 3, 1, 4, 2, 4, 2, 5, 3,
+       5, 4, 5, 3, 6, 4, 6, 5, 6};
+
   _parallel_mergesort_ij_by_col(ij_mat, num_edges);
 
   if (! _compare_arrays(ij_mat, ij_expected, 30) ){
@@ -173,9 +173,9 @@ int test_parallel_sort_ij_by_col()
   _print_small_array(ij_expected, 30);
   printf("\n");
 
-
   return 1;
 }
+*/
 
 int test_gunrock_graph_convert()
 {
@@ -185,7 +185,7 @@ int test_gunrock_graph_convert()
   printf("Test Gunrock Graph Convert\n");
 
   _create_simple_td_graph(&td_graph);
-  td_to_gunrock(&td_graph, &gr_graph);
+  td_to_gunrock(&td_graph, &gr_graph, true);
 
   int csc_col_expected[8] =  { 0, 1, 2, 5, 7, 9, 12, 15};
   int csc_row_expected[15] = { 1, 0, 0, 1, 4, 0, 2, 1, 2, 2, 3, 4, 3, 4, 5};
@@ -217,37 +217,62 @@ int test_gunrock_graph_convert()
   _print_small_array((int*)gr_graph.row_indices, gr_graph.num_edges);
   printf("\n");
 
-
   return 1;
 }
 
-
-int test_gunrock_topk()
+int test_gunrock_apps()
 {
+  // build td_graph
   graph_t td_graph;
-  int top_nodes    = 3;
-  int *node_ids    = (int*)malloc(sizeof(int) * top_nodes);
-  int *in_degrees  = (int*)malloc(sizeof(int) * top_nodes);
-  int *out_degrees = (int*)malloc(sizeof(int) * top_nodes);
-  
-  printf("Test Gunrock TopK Cluster\n");
-
   _create_simple_td_graph(&td_graph);
-  gunrock_topk(&td_graph, top_nodes, node_ids, in_degrees, out_degrees);
 
-  // print results for check correctness
+  //////////////////////////////////////////////////////////////////////////////
+  // Test gunrock primitives - page rank
+  printf("\nTest Gunrock Page Rank\n");
+
+  int   top_nodes    = 5;
+  int   *pr_node_ids = ( int* )malloc(sizeof( int ) * top_nodes);
+  float *page_rank   = (float*)malloc(sizeof(float) * top_nodes);
+
+  // launch gunrock page rank
+  gunrock_pr(&td_graph, top_nodes, pr_node_ids, page_rank);
+
+  // test demo outputs
   int i;
   for (i = 0; i < top_nodes; ++i)
-  {
-    printf("Node ID [%d] : In-degrees [%d] : Out-degrees [%d]\n", node_ids[i], in_degrees[i], out_degrees[i]);
-  }
+    printf("Node ID [%d] : Page Rank [%f]\n", pr_node_ids[i], page_rank[i]);
 
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Test gunrock primitives - top k degree centrality
+  printf("\nTest Gunrock TopK Cluster\n");
+
+  int *tk_node_ids = (int*)malloc(sizeof(int) * top_nodes);
+  int *in_degrees  = (int*)malloc(sizeof(int) * top_nodes);
+  int *out_degrees = (int*)malloc(sizeof(int) * top_nodes);
+
+  // launch gunrock topk
+  gunrock_topk(&td_graph, top_nodes, tk_node_ids, in_degrees, out_degrees);
+
+  // test demo outputs
+  for (i = 0; i < top_nodes; ++i)
+    printf("Node ID [%d] : In-degrees [%d] : Out-degrees [%d]\n",
+      tk_node_ids[i], in_degrees[i], out_degrees[i]);
+
+  /*
+  // clean up if necessary
   if (out_degrees) free(out_degrees);
   if (in_degrees)  free(in_degrees);
-  if (node_ids)    free(node_ids);
+  if (tk_node_ids) free(tk_node_ids);
+  if (pr_node_ids) free(pr_node_ids);
+  if (page_rank)   free(page_rank);
+  */
 
   return 0;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Test gunrock page rank
 
 
 int main(int argc, char** argv)
@@ -255,8 +280,8 @@ int main(int argc, char** argv)
   int ret = 0;
   ret |= test_csr_to_ij();
   ret |= test_sort_ij_by_col();
-  ret |= test_parallel_sort_ij_by_col();
+  //ret |= test_parallel_sort_ij_by_col();
   ret |= test_gunrock_graph_convert();
-  ret |= test_gunrock_topk();
+  ret |= test_gunrock_apps();
   return ret;
 }
