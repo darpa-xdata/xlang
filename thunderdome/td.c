@@ -218,7 +218,13 @@ int td_create_simple_graph(graph_t *graph)
   size_t num_edges = 15;
   size_t top_nodes = 3;
 
-  char* node_names[7] = {"a", "b", "c", "d", "e", "f", "g"};
+  char* names = "a\0b\0c\0d\0e\0f\0g\0";
+  char* node_names_buf = (char*) malloc(sizeof(char) * 2 * num_nodes);
+  memcpy(node_names_buf, names, 14);
+  char** node_names = (char**) malloc(sizeof(char*) * num_nodes);
+  for (int idx = 0; idx < num_nodes; ++idx)
+    node_names[idx] = &names[2*idx];
+
   unsigned int row_offsets[8] = {0,3,6,9,11,14,15,15};
   int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
 
