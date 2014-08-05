@@ -199,7 +199,11 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
   int curr_edge, curr_col, row, col;
 
   printf("------> Sorting ij_mat (edgelist)\n");
+#ifdef USE_PTHREADS
+  _parallel_mergesort_ij_by_col(ij_mat, num_edges);
+#else
   _mergesort_ij_by_col(ij_mat, num_edges);
+#endif // USE_PTHREADS
 
   printf("------> Building csr\n");
   curr_col = 0;

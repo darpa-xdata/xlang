@@ -8,8 +8,9 @@ int _csr_to_ij(int num_nodes, int num_edges,
          int* csr_row_offsets, int *csr_col_indicies,
          int* ij_mat);
 int _mergesort_ij_by_col(int* ij_mat, int num_edges);
+#ifdef USE_PTHREADS
 int _parallel_mergesort_ij_by_col(int* ij_mat, int num_edges);
-
+#endif // USE_PTHREADS
 
 int _create_simple_td_graph(graph_t *graph)
 {
@@ -138,7 +139,7 @@ int test_sort_ij_by_col()
   return 1;
 }
 
-/*
+#ifdef USE_PTHREADS
 int test_parallel_sort_ij_by_col()
 {
   printf("Test Parallel Sort IJ by Col\n");
@@ -175,7 +176,8 @@ int test_parallel_sort_ij_by_col()
 
   return 1;
 }
-*/
+#endif // USE_PTHREADS
+
 
 int test_gunrock_graph_convert()
 {
@@ -220,7 +222,7 @@ int test_gunrock_graph_convert()
   return 1;
 }
 
-int test_gunrock_apps()
+int test_gunrock_page_rank()
 {
   // build td_graph
   graph_t td_graph;
@@ -238,15 +240,27 @@ int test_gunrock_apps()
   gunrock_pr(&td_graph, top_nodes, pr_node_ids, page_rank);
 
   // test demo outputs
-  int i;
-  for (i = 0; i < top_nodes; ++i)
+  for (int i = 0; i < top_nodes; ++i)
     printf("Node ID [%d] : Page Rank [%f]\n", pr_node_ids[i], page_rank[i]);
 
+  // clean up if necessary
+  if (pr_node_ids) free(pr_node_ids);
+  if (page_rank)   free(page_rank);
+
+  return 0;
+}
+
+int test_gunrock_topk()
+{
+  // build td_graph
+  graph_t td_graph;
+  _create_simple_td_graph(&td_graph);
 
   //////////////////////////////////////////////////////////////////////////////
   // Test gunrock primitives - top k degree centrality
   printf("\nTest Gunrock TopK Cluster\n");
 
+  int   top_nodes    = 5;
   int *tk_node_ids = (int*)malloc(sizeof(int) * top_nodes);
   int *in_degrees  = (int*)malloc(sizeof(int) * top_nodes);
   int *out_degrees = (int*)malloc(sizeof(int) * top_nodes);
@@ -255,18 +269,14 @@ int test_gunrock_apps()
   gunrock_topk(&td_graph, top_nodes, tk_node_ids, in_degrees, out_degrees);
 
   // test demo outputs
-  for (i = 0; i < top_nodes; ++i)
+  for (int i = 0; i < top_nodes; ++i)
     printf("Node ID [%d] : In-degrees [%d] : Out-degrees [%d]\n",
       tk_node_ids[i], in_degrees[i], out_degrees[i]);
 
-  /*
   // clean up if necessary
   if (out_degrees) free(out_degrees);
   if (in_degrees)  free(in_degrees);
   if (tk_node_ids) free(tk_node_ids);
-  if (pr_node_ids) free(pr_node_ids);
-  if (page_rank)   free(page_rank);
-  */
 
   return 0;
 }
@@ -280,8 +290,11 @@ int main(int argc, char** argv)
   int ret = 0;
   ret |= test_csr_to_ij();
   ret |= test_sort_ij_by_col();
-  //ret |= test_parallel_sort_ij_by_col();
+#ifdef USE_PTHREADS
+  ret |= test_parallel_sort_ij_by_col();
+#endif // USE_PTHREADS
   ret |= test_gunrock_graph_convert();
-  ret |= test_gunrock_apps();
+  ret |= test_gunrock_topk();
+  ret |= test_gunrock_page_rank();
   return ret;
 }
