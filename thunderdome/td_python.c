@@ -412,6 +412,44 @@ void td_py_invoke5(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
     Py_DECREF(pArgs);
 }
 
+void td_py_invoke_graph1(graph_t *out_graph, char *fname, graph_t *in_graph)
+{
+    PyObject *pFunc, *pArgs, *pValue;
+
+    pFunc = td_py_get_callable(fname);
+    if (pFunc == NULL) {
+      printf("Error getting pyhton function: %s\n", fname);
+      return;
+    }
+
+    pArgs = PyTuple_New(2);
+    pValue = PyLong_FromSize_t((size_t) out_graph);
+    if (pValue == NULL) {
+      printf("Error getting python args: in_graph\n");
+      return;
+    }
+    PyTuple_SetItem(pArgs, 0, pValue);
+
+    
+    pValue = PyLong_FromSize_t((size_t) in_graph);
+    if (pValue == NULL) {
+      printf("Error getting python args: in_graph\n");
+      return;
+    }
+    PyTuple_SetItem(pArgs, 1, pValue);
+
+  
+    pValue = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pFunc);
+    Py_DECREF(pArgs);
+    if (pValue == NULL) {
+        fprintf(stderr, "Error in Python call %s\n", fname);
+        return;
+    }
+    Py_DECREF(pValue);
+
+}
+
 void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph, 
 				int *in_csc_offsets, int *in_csc_indices)
 			       
@@ -506,6 +544,7 @@ void td_py_init(char *homedir)
     env->invoke3 = &td_py_invoke3;
     env->invoke4 = &td_py_invoke4;
     env->invoke5 = &td_py_invoke5;
+    env->invokeGraph1 = &td_py_invoke_graph1;
     env->invokeGraphAndCSC = &td_py_invoke_graph_and_csc;
     //env->retain
     //env->release

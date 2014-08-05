@@ -33,6 +33,9 @@ int main(int argc, char *argv[])
     td_array_t a = { .data=v, .length=3, .eltype=TD_DOUBLE, .ndims=1 };
     td_val_t av = { .tag = TD_ARRAY, .object = &a };
 
+    graph_t graph;
+    td_create_simple_graph(&graph);
+
 #ifdef TD_HAS_JULIA
     // start julia
 
@@ -65,6 +68,9 @@ int main(int argc, char *argv[])
 
     py->invoke1(&out_py, "numpy.linalg.norm", &av);
     printf("numpy.linalg.norm([1.0, 2.0, 3.0]) = %g\n", td_double(&out_py));
+
+    graph_t out_graph;
+    py->invokeGraph1(&out_graph, "td_python_wrap.print_graph", &graph);
 
 #endif
 
