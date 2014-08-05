@@ -211,3 +211,25 @@ td_env_t *td_env_r(char *homedir) {
 void td_provide_r(td_env_t *e) {
   cached_r_env = e;
 }
+
+int td_create_simple_graph(graph_t *graph)
+{
+  size_t num_nodes = 7;
+  size_t num_edges = 15;
+  size_t top_nodes = 3;
+
+  char* node_names[7] = {"a", "b", "c", "d", "e", "f", "g"};
+  unsigned int row_offsets[8] = {0,3,6,9,11,14,15,15};
+  int col_indices[15] = {1,2,3,0,2,4,3,4,5,5,6,2,5,6,6};
+
+  graph->numNodes = num_nodes;
+  graph->numEdges = num_edges;
+  graph->nodeNames = node_names;
+  graph->rowOffsets = (int*) malloc(sizeof(int) * num_nodes+1);
+  graph->colIndices = (int*) malloc(sizeof(int) * num_edges);
+
+  memcpy(graph->rowOffsets, (int*)row_offsets, (num_nodes+1) * sizeof(int));
+  memcpy(graph->colIndices, (int*)col_indices, num_edges * sizeof(int));
+
+  return 0;
+}

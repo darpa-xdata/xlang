@@ -234,7 +234,7 @@ void    *td_pointer(td_val_t *v);
 // utilities
 
 void td_error(char *msg);
-
+  int td_create_simple_graph(graph_t *graph);
 
 // starting environments
 
