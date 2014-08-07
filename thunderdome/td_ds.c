@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "td_ds.h"
 
@@ -160,6 +161,7 @@ static int parse_size_t(const char **pbegin, const char *end, size_t *out)
     }
     *out = result;
     *pbegin = begin;
+    return 0;
 }
 
 // [a-zA-Z_][a-zA-Z0-9_]*
