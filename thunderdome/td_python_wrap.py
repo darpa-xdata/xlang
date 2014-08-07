@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import ctypes
-
+from traceback import print_exc
+import numpy
 
 class GraphT(ctypes.Structure):
     _fields_ = [('numNodes', ctypes.c_int),
@@ -13,8 +14,14 @@ class GraphT(ctypes.Structure):
                 ('colIndices', ctypes.POINTER(ctypes.c_int))]  
 
 def print_graph(out_graph_addr, in_graph_addr):
-    in_graph = GraphT.from_address(in_graph_addr)
-    print(in_graph.numNodes)
-#    import pdb; pdb.set_trace()
-    for i in xrange(in_graph.numNodes):
-        print(in_graph.nodeNames[i])
+    try:
+        in_graph = GraphT.from_address(in_graph_addr)
+        print(in_graph.numNodes)
+        p = ctypes.cast(in_graph.nodeNames, ctypes.POINTER(ctypes.c_size_t))
+        nodes = numpy.ctypeslib.as_array(p, shape=(in_graph.numNodes,))
+        print(nodes, nodes.dtype)
+        c = nodes.ctypes.data_as(ctypes.POINTER(ctypes.c_char_p))
+        print(c[0], c[1])
+    except:
+        print_exc()
+        raise
