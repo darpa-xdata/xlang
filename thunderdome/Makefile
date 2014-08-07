@@ -1,56 +1,4 @@
-# The worst makefile in the world!
-# accomodate different platforms
-ARCH="win32"
-LIBTYPE="dll"
-CC = gcc
-UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-        ARCH=linux
-        LIBTYPE=so
-        SERVER_DIR=amd64/server
-    endif
-    ifeq ($(UNAME_S),Darwin)
-        ARCH=darwin
-        LIBTYPE=dylib
-        SERVER_DIR=server
-	CC=clang -std=c11 -g -O0
-    endif
-CC := /opt/local/bin/clang-mp-3.5 -g -O0
-DEBUG = -g -O0
-
-
-JULIA_BIN = $(shell dirname `which julia`)
-JULIA_PATH = $(JULIA_BIN)/../..
-JULIA_LIBDIR = $(JULIA_PATH)/usr/lib
-JULIA_CFLAGS = -I$(JULIA_PATH)/src -I$(JULIA_PATH)/src/support -I$(JULIA_PATH)/include/julia -I$(JULIA_PATH)/usr/include
-JULIA_LDFLAGS = -L$(JULIA_LIBDIR) -Wl,-rpath -Wl,$(JULIA_LIBDIR) -ljulia
-
-PYTHON_EXE = $(shell python-config --exec-prefix)/bin/python
-PYTHON_CFLAGS = $(shell python-config --cflags) \
-               -I$(shell python -c "import numpy; print(numpy.get_include())") \
-               -I$(shell python -c "import numpy; print(numpy.get_numarray_include())")
-PYTHON_LIBDIR = $(shell python-config --prefix)/lib
-PYTHON_LDFLAGS =-L$(PYTHON_LIBDIR) -Wl,-rpath -Wl,$(PYTHON_LIBDIR) $(shell python-config --ldflags)
-
-JAVA_PATH = $JAVA_HOME/lib
-
-
-# R parameters.
-R_PATH = $(shell R RHOME)
-R_CXX = $(shell $(R_PATH)/bin/R CMD config CXX)
-
-R_RCPPINCL = $(shell echo 'Rcpp:::CxxFlags()' | $(R_PATH)/bin/R --vanilla --slave)
-R_RINSIDEINCL = $(shell echo 'RInside:::CxxFlags()' | $(R_PATH)/bin/R --vanilla --slave)
-
-R_RCPPLIBS = $(shell echo 'Rcpp:::LdFlags()'  | $(R_PATH)/bin/R --vanilla --slave)
-R_RINSIDELIBS = $(shell echo 'RInside:::LdFlags()'  | $(R_PATH)/bin/R --vanilla --slave)
-
-R_INCL = $(shell $(R_PATH)/bin/R CMD config --cppflags)
-R_LDFLAGS = $(shell $(R_PATH)/bin/R CMD config --ldflags)
-
-R_INCLUDES = $(R_INCL) $(R_RCPPINCL) $(R_RINSIDEINCL)
-R_LIBS = $(R_LDFLAGS) $(R_RCPPLIBS) $(R_RINSIDELIBS)
-CXX = $(shell $(R_HOME)/bin/R CMD config CXX)
+include ../Makefile.inc
 
 LIBTD=libtd.$(LIBTYPE)
 LIBTD_JULIA=libtd_julia.$(LIBTYPE)
@@ -59,9 +7,14 @@ LIBTD_R=libtd_r.$(LIBTYPE)
 LIBTD_JAVA=libtd_java.$(LIBTYPE)
 LIBTD_JAVA_WINDOWS=libtd_java_windows.$(LIBTYPE)
 
-default: all
+default: examples
 
-all: example_client example_client_java ds_roundtrip
+examples: example_client example_client_java ds_roundtrip
+
+libs: $(LIBTD) $(LIBTD_JULIA) $(LIBTD_R) $(LIBTD_PYTHON)
+
+test:
+	@echo 'No tests here =('
 
 $(LIBTD): td.h td_ds.h td.c td_ds.c
 	$(CC) $(DEBUG) -fPIC -c td.c -o td.o

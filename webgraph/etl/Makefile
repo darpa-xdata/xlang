@@ -1,5 +1,7 @@
-CC=gcc
-CFLAGS=-I. -I../../
+include ../../Makefile.inc
+
+
+CFLAGS += -I. -I../../
 DEPS = c_import.h
 OBJ = c_import.o test_c_import.o
 
