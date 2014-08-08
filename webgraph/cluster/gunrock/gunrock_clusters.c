@@ -222,9 +222,9 @@ int _ij_to_csc(int num_nodes, int num_edges, int* ij_mat,
 }
 
 
-int _csr_to_csc(int num_nodes, int num_edges,
-		int* csr_row_offsets, int* csr_col_indices,
-		int* csc_col_offsets, int* csc_row_indices)
+int csr_to_csc(int num_nodes, int num_edges,
+               int* csr_row_offsets, int* csr_col_indices,
+               int* csc_col_offsets, int* csc_row_indices)
 {
 
   int* ij_mat = (int*) malloc( sizeof(int) * 2 * num_edges);
@@ -256,7 +256,7 @@ int td_to_gunrock(
 
   if (csc_convert)
   {
-    _csr_to_csc(num_nodes, num_edges, td_graph->rowOffsets, td_graph->colIndices,
+    csr_to_csc(num_nodes, num_edges, td_graph->rowOffsets, td_graph->colIndices,
       csc_col_offsets, csc_row_indices);
     gr_graph->col_offsets = (void*)csc_col_offsets;
     gr_graph->row_indices = (void*)csc_row_indices;
