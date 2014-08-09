@@ -1,6 +1,6 @@
-#include "thunderdome/td.h"
-#include "etl/c_import.h"
-#include "cluster/gunrock/gunrock_clusters.h"
+#include <thunderdome/td.h>
+#include <webgraph/etl/c_import.h>
+#include <cluster/gunrock/gunrock_clusters.h>
 
 
 void _print_usage()
@@ -38,38 +38,62 @@ int main(int argc, char** argv)
   char* arc_file = argv[3];
   char* index_file = (argc == 5) ? argv[4] : NULL;
   int top_nodes = atoi(argv[1]);
-  int *node_ids          = (int*)malloc(sizeof(int) * top_nodes);
-  int *centrality_values = (int*)malloc(sizeof(int) * top_nodes);
+  int *node_ids = (int*)malloc(sizeof(int) * top_nodes);
+  int *in_deg = (int*)malloc(sizeof(int) * top_nodes);
+  int *out_deg = (int*)malloc(sizeof(int) * top_nodes);
 
   graph_t td_graph;
 
   load_graph(format, arc_file, index_file, &td_graph);
-  gunrock_topk(&td_graph, top_nodes, node_ids, centrality_values);
 
-  // print results for check correctness
-  /* int i; */
-  /* for (i = 0; i < top_nodes; ++i) */
-  /* { */
-  /*   printf("Node ID [%d] : CV [%d] \n", node_ids[i], centrality_values[i]); */
-  /* } */
-  /* printf("\n"); */
+  gunrock_topk(&td_graph, top_nodes, node_ids, in_deg, out_deg);
 
+  printf("node_ids:");
+  for (int idx=0; idx<top_nodes; ++idx){
+    printf("%d, ", node_ids[idx]);
+  }
+  printf("\n");
 
+  printf("in_deg:");
+  for (int idx=0; idx<top_nodes; ++idx){
+    printf("%d, ", in_deg[idx]);
+  }
+  printf("\n");
+
+  printf("out_deg:");
+  for (int idx=0; idx<top_nodes; ++idx){
+    printf("%d, ", out_deg[idx]);
+  }
+  printf("\n");
 
   td_val_t out_py;
   td_env_t *py = td_env_python(TD_DIR, TD_PYTHON_EXE);
 
-  td_array_t td_nodes = { .data=node_ids, .length=top_nodes, .eltype=TD_INT32, .ndims=1 };
-  td_val_t arg_py = { .tag = TD_ARRAY, .object = &td_nodes };
-  td_array_t td_centralities = { .data=centrality_values, .length=top_nodes, .eltype=TD_INT32, .ndims=1 };
-  td_val_t arg_py_2 = { .tag = TD_ARRAY, .object = &td_centralities };
+  td_array_t td_nodes = { .data=node_ids, 
+			  .length=top_nodes, 
+			  .eltype=TD_INT32, 
+			  .ndims=1 };
+  td_val_t arg_py = { .tag = TD_ARRAY, 
+		      .object = &td_nodes };
+  td_array_t td_in_deg = { .data=in_deg,
+			   .length=top_nodes, 
+			   .eltype=TD_INT64, 
+			   .ndims=1 };
+  td_val_t arg_py_in_deg = { .tag = TD_ARRAY, 
+			     .object = &td_in_deg };
+  td_array_t td_out_deg = { .data=out_deg,
+			    .length=top_nodes, 
+			    .eltype=TD_INT64, 
+			    .ndims=1 };
+  td_val_t arg_py_out_deg = { .tag = TD_ARRAY, 
+			      .object = &td_out_deg };
 
-  py->invoke2(&out_py, "bokeh_wrap.visualize", &arg_py, &arg_py_2);
+  py->invoke3(&out_py, "bokeh_wrap.visualize", &arg_py, 
+  	      &arg_py_in_deg, &arg_py_out_deg);
   
-  if (centrality_values) free(centrality_values);
-  if (node_ids)          free(node_ids);
-  
+  if (in_deg)    free(in_deg);
+  if (out_deg)   free(out_deg);
+  if (node_ids) free(node_ids);
 
   return 0;
-
 }
