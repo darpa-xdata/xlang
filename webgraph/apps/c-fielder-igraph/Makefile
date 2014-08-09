@@ -1,12 +1,11 @@
 include ../../../Makefile.inc
 
-TD_CFLAGS=-I. -I../../ -I../../../
+CXXFLAGS += -I. -I../../ -I../../../
 DEPS =
 OBJ = app-c-fielder-igraph.o ../../etl/c_import.o
 
+.PHONY = help test
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
 
 help:
 	@echo 'Makefile for a webgraph etl                                            '
