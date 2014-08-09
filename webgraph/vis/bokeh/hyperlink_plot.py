@@ -1,4 +1,5 @@
 import bokeh.plotting as plt
+from bokeh.charts import Bar
 import brewer2mpl as b2m
 import pandas as pds
 
@@ -26,5 +27,5 @@ def example_hyperlink_plot():
 
 def cluster_vals(nodes, values):
     plt.output_file("in_deg.html", title="In degree rankings")
-    plt.scatter(nodes, values, size=10, name="Cluster Values")
-    plt.show()
+    bar = Bar(nodes, values)
+    bar.show()

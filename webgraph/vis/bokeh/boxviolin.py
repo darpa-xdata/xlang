@@ -5,6 +5,9 @@ import pandas as pd
 from bokeh.objects import (CategoricalAxis, ColumnDataSource, DataRange1d, 
         FactorRange, Glyph, Grid, LinearAxis, Plot, PanTool, WheelZoomTool)
 from bokeh.glyphs import Rect
+from bokeh.plotting import output_file, show, curdoc, save
+from bokeh.resources import Resources
+
 
 
 def make_box_violin_plot(data, num_bins, maxwidth=0.9):
@@ -34,11 +37,11 @@ def make_box_violin_plot(data, num_bins, maxwidth=0.9):
     xdr = FactorRange(factors=sorted(df["group"].unique()))
     ydr = DataRange1d(sources=[ds.columns("centers")])
 
-    plot = Plot(data_sources=[ds], x_range=xdr, y_range=ydr, title="Violin Box Plot",
-            plot_width=800, plot_height=600, 
-            tools=[PanTool(dimensions=["height"]), WheelZoomTool()])
-    xaxis = CategoricalAxis(plot=plot, location="bottom")
-    yaxis = LinearAxis(plot=plot, location="left")
+    plot = Plot(data_sources=[ds], x_range=xdr, y_range=ydr, title="Degree Distribution",
+            plot_width=750, plot_height=600, 
+            tools=[])
+    xaxis = CategoricalAxis(plot=plot, location="bottom", axis_label="number of nodes")
+    yaxis = LinearAxis(plot=plot, location="left", axis_label="degree")
     plot.below.append(xaxis)
     plot.above.append(yaxis)
 
@@ -52,36 +55,22 @@ def make_box_violin_plot(data, num_bins, maxwidth=0.9):
     return plot
 
 
-def _maketestplot():
-    data = dict(a = np.random.randn(100)*30 + 10,
-                b = np.random.randn(30)*20 + 5,
-                c = np.random.randn(300)*35 + 15)
-    p = make_box_violin_plot(data, 10)
-    return p
-
-def filemain():
-    p = _maketestplot()
-    from bokeh.plotting import output_file, show, curdoc, save
-    from bokeh.document import Document
-    from bokeh.resources import Resources
-    doc = Document()
+def plot_graph(data, bins):
+    p = make_box_violin_plot(data, bins)
+    doc = curdoc()
     doc.add(p)
     doc._current_plot = p   #TODO: Fix this!
     output_file("violin.html")
-    save("violin.html", obj=doc)
-    return p
+    show()
+    #save("violin.html", obj=doc)
 
-#def servermain():
-#    from bokeh.plotting import output_server
-#    p = _maktestplot()
-#    renderer = [r for r in p.renderers if isinstance(r, Glyph)][0]
-#    ds = renderer.data_source
-#    while True:
-#        pts = np.random.randn(50)*25
-#        ds.data["a"] = np.hstack((ds.data["a"], pts))
+
 
 if __name__ == "__main__":
     import sys
-    filemain()
+    data = dict(a = np.random.randn(100)*30 + 10,
+                b = np.random.randn(30)*20 + 5,
+                c = np.random.randn(300)*35 + 15)
+    plot_graph(data, 10)
 
 

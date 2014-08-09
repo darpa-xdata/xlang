@@ -77,13 +77,13 @@ int main(int argc, char** argv)
 		      .object = &td_nodes };
   td_array_t td_in_deg = { .data=in_deg,
 			   .length=top_nodes, 
-			   .eltype=TD_INT64, 
+			   .eltype=TD_INT32, 
 			   .ndims=1 };
   td_val_t arg_py_in_deg = { .tag = TD_ARRAY, 
 			     .object = &td_in_deg };
   td_array_t td_out_deg = { .data=out_deg,
 			    .length=top_nodes, 
-			    .eltype=TD_INT64, 
+			    .eltype=TD_INT32, 
 			    .ndims=1 };
   td_val_t arg_py_out_deg = { .tag = TD_ARRAY, 
 			      .object = &td_out_deg };
