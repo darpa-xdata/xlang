@@ -308,81 +308,84 @@ PyObject* td_py_get_callable(char *fname)
     return pFunc;
 }
 
-void td_py_invoke0(td_val_t *out, char *fname)
+void td_py_add_arg(PyObject *pArgs, int pos, td_val_t *arg)
 {
-    PyObject *pFunc, *pArgs, *pValue;
+    PyObject* pValue;
+
+    pValue = from_td_val(arg);
+    if (pValue == NULL)  {
+        fprintf(stderr, "Error in Python value conversion\n");
+        return;
+    }
+    /* pValue reference stolen here: */
+    PyTuple_SetItem(pArgs, pos, pValue);
+}
+
+void td_py_call(td_val_t *out, PyObject *pArgs, char *fname)
+{
+    PyObject *pFunc, *pValue;
 
     pFunc = td_py_get_callable(fname);
     if (pFunc == NULL) return;
-
-    pArgs = PyTuple_New(0);
+   
     pValue = PyObject_CallObject(pFunc, pArgs);
     if (pValue == NULL) {
         fprintf(stderr, "Error in Python call %s\n", fname);
         return;
     }
     to_td_val(out, pValue);
+    Py_DECREF(pFunc);
+    Py_DECREF(pValue);
+}
+
+void td_py_invoke0(td_val_t *out, char *fname)
+{
+    PyObject *pArgs;
+
+    pArgs = PyTuple_New(0);
+    td_py_call(out, pArgs, fname);
+    Py_DECREF(pArgs);
 }
 
 void td_py_invoke1(td_val_t *out, char *fname, td_val_t *arg)
 {
-    PyObject *pFunc, *pArgs, *pValue;
-
-    pFunc = td_py_get_callable(fname);
-    if (pFunc == NULL) return;
+    PyObject *pArgs;
 
     pArgs = PyTuple_New(1);
-    pValue = from_td_val(arg);
-    if (pValue == NULL) return;
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 0, pValue);
-  
-    pValue = PyObject_CallObject(pFunc, pArgs);
-    Py_DECREF(pFunc);
+    td_py_add_arg(pArgs, 0, arg);
+    td_py_call(out, pArgs, fname);
     Py_DECREF(pArgs);
-    if (pValue == NULL) {
-        fprintf(stderr, "Error in Python call %s\n", fname);
-        return;
-    }
-    to_td_val(out, pValue);
-    Py_DECREF(pValue);
 }
-
 
 void td_py_invoke2(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2)
 {
-    PyObject *pFunc, *pArgs, *pValue;
-
-    pFunc = td_py_get_callable(fname);
-    if (pFunc == NULL) return;
+    PyObject *pArgs;
 
     pArgs = PyTuple_New(2);
-    pValue = from_td_val(arg1);
-    if (pValue == NULL) return;
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 0, pValue);
-
-    pValue = from_td_val(arg2);
-    if (pValue == NULL) return;
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 1, pValue);
-  
-    pValue = PyObject_CallObject(pFunc, pArgs);
-    Py_DECREF(pFunc);
+    td_py_add_arg(pArgs, 0, arg1);
+    td_py_add_arg(pArgs, 1, arg2);
+    td_py_call(out, pArgs, fname);
     Py_DECREF(pArgs);
-    if (pValue == NULL) {
-        fprintf(stderr, "Error in Python call %s\n", fname);
-        return;
-    }
-    to_td_val(out, pValue);
-    Py_DECREF(pValue);
+}
+
+void td_py_invoke3(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
+		   td_val_t *arg3)
+{
+    PyObject *pArgs;
+
+    pArgs = PyTuple_New(3);
+    td_py_add_arg(pArgs, 0, arg1);
+    td_py_add_arg(pArgs, 1, arg2);
+    td_py_add_arg(pArgs, 2, arg3);
+    td_py_call(out, pArgs, fname);
+    Py_DECREF(pArgs);
 }
 
 void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph, 
 				int *in_csc_offsets, int *in_csc_indices)
 			       
 {
-    PyObject *pFunc, *pArgs, *pValue;
+    PyObject *pArgs;
 
     td_array_t node_array = { .data=in_graph->nodeNames, .length=in_graph->numNodes,
 			      .eltype=TD_INT64, .ndims=1 };
@@ -404,64 +407,14 @@ void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph,
 				     .eltype=TD_INT32, .ndims=1 };
     td_val_t csc_indices = { .tag = TD_ARRAY, .object = &csc_indices_array };
 
-    pFunc = td_py_get_callable(fname);
-    if (pFunc == NULL) {
-      printf("Error getting pyhton function: %s\n", fname);
-      return;
-    }
-
     pArgs = PyTuple_New(5);
-    pValue = from_td_val(&nodes);
-    if (pValue == NULL) {
-      printf("Error getting python args: nodes\n");
-      return;
-    }
-
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 0, pValue);
-
-    pValue = from_td_val(&csr_offsets);
-    if (pValue == NULL) {
-      printf("Error getting python args:j csr_offsets\n");
-      return;
-    }
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 1, pValue);
-
-    pValue = from_td_val(&csr_indices);
-    if (pValue == NULL) {
-      printf("Error getting python args: csr_indices\n");
-      return;
-    }
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 2, pValue);
-
-    pValue = from_td_val(&csc_offsets);
-    if (pValue == NULL) {
-      printf("Error getting python args: csc_offsets\n");
-      return;
-    }
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 3, pValue);
-
-    pValue = from_td_val(&csc_indices);
-    if (pValue == NULL) {
-      printf("Error getting python args: csc_indices\n");
-      return;
-    }
-    /* pValue reference stolen here: */
-    PyTuple_SetItem(pArgs, 4, pValue);
-
-  
-    pValue = PyObject_CallObject(pFunc, pArgs);
-    Py_DECREF(pFunc);
+    td_py_add_arg(pArgs, 0, &nodes);
+    td_py_add_arg(pArgs, 1, &csr_offsets);
+    td_py_add_arg(pArgs, 2, &csr_indices);
+    td_py_add_arg(pArgs, 3, &csc_offsets);
+    td_py_add_arg(pArgs, 4, &csc_indices);
+    td_py_call(out, pArgs, fname);
     Py_DECREF(pArgs);
-    if (pValue == NULL) {
-        fprintf(stderr, "Error in Python call %s\n", fname);
-        return;
-    }
-    to_td_val(out, pValue);
-    Py_DECREF(pValue);
 }
 
 void td_py_eval(td_val_t *out, char *str)
@@ -519,7 +472,7 @@ void td_py_init(char *homedir)
     env->invoke0 = &td_py_invoke0;
     env->invoke1 = &td_py_invoke1;
     env->invoke2 = &td_py_invoke2;
-    //env->invoke3
+    env->invoke3 = &td_py_invoke3;
     env->invokeGraphAndCSC = &td_py_invoke_graph_and_csc;
     //env->retain
     //env->release
