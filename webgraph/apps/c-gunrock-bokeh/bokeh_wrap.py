@@ -1,24 +1,23 @@
-try:
-    import sys
-    import traceback
-    
-    import numpy as np
+import sys
+import traceback
+        
+import numpy as np
 
-    # Ugly hack because tables (imported by bokeh) borks if sys.argv isn't defined
-    sys.argv = ['app']
-    sys.path.append("../../vis/bokeh")    
-    import hyperlink_plot
-    import boxviolin
-    
-    print("loading bokeh.wrap")
-except:
-    traceback.print_exc()
+# Ugly hack because tables (imported by bokeh) borks if sys.argv isn't defined
+sys.argv = ['app']
+sys.path.append("../../vis/bokeh")    
+import hyperlink_plot
+import boxviolin
+import adjacency
+
+print("loading bokeh.wrap")
 
 def visualize(csr_offsets, csr_indices, top_nodes, in_deg, out_deg ):
     try:
+
         print("Visualizing here")
 
-        print(nodes);
+        print(top_nodes);
         print(in_deg);
         print(out_deg);
 
@@ -35,7 +34,11 @@ def visualize(csr_offsets, csr_indices, top_nodes, in_deg, out_deg ):
                               #'out degree':out_deg,
                              },
                              100)
+        adjacency.plot_graph(csr_offsets, csr_indices)
+        
     except:
         traceback.print_exc()
     return 0
 
+def test():
+    return 0

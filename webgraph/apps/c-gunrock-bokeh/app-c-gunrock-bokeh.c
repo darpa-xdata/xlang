@@ -69,6 +69,10 @@ int main(int argc, char** argv)
   td_val_t out_py;
   td_env_t *py = td_env_python(TD_DIR, TD_PYTHON_EXE);
 
+  py->invoke0(&out_py, "test_import.test");
+  py->invoke0(&out_py, "bokeh_wrap.test");
+
+
   td_array_t td_csr_offsets = { .data   = td_graph.rowOffsets, 
 				.length = td_graph.numNodes+1, 
 				.eltype = TD_INT32, 
@@ -101,9 +105,8 @@ int main(int argc, char** argv)
 			      .object = &td_out_deg };
 
   py->invoke5(&out_py, "bokeh_wrap.visualize",
-	      &arg_py_csr_offsets, &arg_py_csr_indices,
+  	      &arg_py_csr_offsets, &arg_py_csr_indices,
   	      &arg_py_top_nodes, &arg_py_in_deg, &arg_py_out_deg);
-
 
   if (in_deg)    free(in_deg);
   if (out_deg)   free(out_deg);

@@ -387,7 +387,7 @@ void td_py_invoke4(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
 {
     PyObject *pArgs;
 
-    pArgs = PyTuple_New(3);
+    pArgs = PyTuple_New(4);
     td_py_add_arg(pArgs, 0, arg1);
     td_py_add_arg(pArgs, 1, arg2);
     td_py_add_arg(pArgs, 2, arg3);
@@ -402,7 +402,7 @@ void td_py_invoke5(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
 {
     PyObject *pArgs;
 
-    pArgs = PyTuple_New(3);
+    pArgs = PyTuple_New(5);
     td_py_add_arg(pArgs, 0, arg1);
     td_py_add_arg(pArgs, 1, arg2);
     td_py_add_arg(pArgs, 2, arg3);

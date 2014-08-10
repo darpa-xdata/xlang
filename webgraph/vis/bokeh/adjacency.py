@@ -6,14 +6,13 @@ import bokeh.plotting as plt
 import numpy as np
 
 
-def plot_graph(nodes, csr_offsets, csr_indices,
-               csc_offsets, csc_indices):
+def plot_graph(csr_offsets, csr_indices):
     try:
         import sys
         sys.argv = ["adjacency.py"]
         
         adj = compute_adj(csr_offsets, csr_indices)
-        plot_adj()
+        plot_adj(adj)
     except:        
         print_exc()
     return 0
