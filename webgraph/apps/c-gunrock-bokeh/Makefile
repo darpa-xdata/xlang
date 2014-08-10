@@ -21,7 +21,7 @@ help:
 
 
 test: app ../../data/web-NotreDame.txt ../../data/pld-index-sample ../../data/pld-arc-sample
-	./app 10 SNAP ../../data/web-NotreDame.txt 
+	./app 10000 SNAP ../../data/web-NotreDame.txt 
 	#./app 100 WDC ../../data/pld-arc-sample ../../data/pld-index-sample
 
 app: $(OBJ) $(DEPS)

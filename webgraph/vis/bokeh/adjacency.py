@@ -6,12 +6,36 @@ import bokeh.plotting as plt
 import numpy as np
 
 
-def plot_graph(csr_offsets, csr_indices):
+def find_in_array(array, val):
+    for i, arr_val in enumerate(array):
+        if arr_val == val:
+            return i
+    return -1
+
+
+def build_subgraph(nodes, csr_offsets, csr_indices):
+    row_offsets = np.zeros(len(nodes) + 1, dtype=int)
+    col_indices = np.empty(csr_indices.shape, dtype=int)
+    curr_edge = 0
+    for new_id, node_id in enumerate(nodes):
+        cols = csr_indices[csr_offsets[node_id]:csr_offsets[node_id+1]]
+        row_offsets[new_id] = curr_edge
+        for col_id in cols:
+            col_new_id = find_in_array(nodes, col_id)
+            if col_new_id != -1:
+                col_indices[curr_edge] = col_new_id
+                curr_edge += 1
+    row_offsets[new_id+1] = curr_edge
+    return row_offsets, col_indices
+
+
+def plot_graph(nodes, csr_offsets, csr_indices):
     try:
         import sys
         sys.argv = ["adjacency.py"]
         
-        adj = compute_adj(csr_offsets, csr_indices)
+        rows, cols = build_subgraph(nodes[:1000], csr_offsets, csr_indices)
+        adj = compute_adj(rows, cols)
         plot_adj(adj)
     except:        
         print_exc()
