@@ -1,33 +1,46 @@
 from __future__ import absolute_import, division, print_function
 
+from traceback import print_exc
+
 import bokeh.plotting as plt
 import numpy as np
 
+
+def plot_graph(nodes, csr_offsets, csr_indices,
+               csc_offsets, csc_indices):
+    try:
+        import sys
+        sys.argv = ["adjacency.py"]
+        
+        adj = compute_adj(csr_offsets, csr_indices)
+        plot_adj()
+    except:        
+        print_exc()
+    return 0
 
 
 def load_random_graph():
     N = 500
     M = 10
     values = np.random.random(N)
-    rows = np.empty(N)
+    rows = np.empty(N+1)
     idx = 0
     for i in range(N):
         idx += np.random.randint(0, M)
         rows[i] = idx
+    rows[N] = rows[N-1] + M
     rows = rows.astype(np.int)
-    cols = np.random.randint(0, N, rows[-1]+M)
+    cols = np.random.randint(0, N, rows[-1])
     return rows, cols
 
 
 def compute_adj(rows, cols):
-    N = len(rows)
+    N = len(rows) - 1
     adj = np.zeros((N, N))
-    for i in range(N-2):
+    for i in range(N):
         start, end = rows[i], rows[i+1]
         for j in range(start, end):
             adj[i, cols[j]] = 100
-    for j in range(rows[-1], len(cols)):
-        adj[N-1, cols[j]] = 100
     return adj
 
 

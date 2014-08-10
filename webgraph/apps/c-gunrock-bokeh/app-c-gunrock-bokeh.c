@@ -69,31 +69,45 @@ int main(int argc, char** argv)
   td_val_t out_py;
   td_env_t *py = td_env_python(TD_DIR, TD_PYTHON_EXE);
 
-  td_array_t td_nodes = { .data=node_ids, 
-			  .length=top_nodes, 
-			  .eltype=TD_INT32, 
-			  .ndims=1 };
-  td_val_t arg_py = { .tag = TD_ARRAY, 
-		      .object = &td_nodes };
-  td_array_t td_in_deg = { .data=in_deg,
-			   .length=top_nodes, 
-			   .eltype=TD_INT32, 
-			   .ndims=1 };
-  td_val_t arg_py_in_deg = { .tag = TD_ARRAY, 
+  td_array_t td_csr_offsets = { .data   = td_graph.rowOffsets, 
+				.length = td_graph.numNodes+1, 
+				.eltype = TD_INT32, 
+				.ndims  = 1 };
+  td_val_t arg_py_csr_offsets = { .tag    = TD_ARRAY, 
+				  .object = &td_csr_offsets };
+  td_array_t td_csr_indices = { .data   = td_graph.colIndices, 
+				.length = td_graph.numEdges,
+				.eltype = TD_INT32, 
+				.ndims  = 1 };
+  td_val_t arg_py_csr_indices = { .tag    = TD_ARRAY, 
+				  .object = &td_csr_indices };
+  td_array_t td_top_nodes = { .data   = node_ids, 
+			      .length = top_nodes, 
+			      .eltype = TD_INT32, 
+			      .ndims  = 1 };
+  td_val_t arg_py_top_nodes = { .tag = TD_ARRAY, 
+				.object = &td_top_nodes };
+  td_array_t td_in_deg = { .data   = in_deg,
+			   .length = top_nodes, 
+			   .eltype = TD_INT32, 
+			   .ndims  = 1 };
+  td_val_t arg_py_in_deg = { .tag    = TD_ARRAY, 
 			     .object = &td_in_deg };
-  td_array_t td_out_deg = { .data=out_deg,
-			    .length=top_nodes, 
-			    .eltype=TD_INT32, 
-			    .ndims=1 };
-  td_val_t arg_py_out_deg = { .tag = TD_ARRAY, 
+  td_array_t td_out_deg = { .data   = out_deg,
+			    .length = top_nodes, 
+			    .eltype = TD_INT32, 
+			    .ndims  = 1 };
+  td_val_t arg_py_out_deg = { .tag    = TD_ARRAY, 
 			      .object = &td_out_deg };
 
-  py->invoke3(&out_py, "bokeh_wrap.visualize", &arg_py, 
-  	      &arg_py_in_deg, &arg_py_out_deg);
-  
+  py->invoke5(&out_py, "bokeh_wrap.visualize",
+	      &arg_py_csr_offsets, &arg_py_csr_indices,
+  	      &arg_py_top_nodes, &arg_py_in_deg, &arg_py_out_deg);
+
+
   if (in_deg)    free(in_deg);
   if (out_deg)   free(out_deg);
-  if (node_ids) free(node_ids);
+  if (node_ids)  free(node_ids);
 
   return 0;
 }

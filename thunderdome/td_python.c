@@ -381,6 +381,37 @@ void td_py_invoke3(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
     Py_DECREF(pArgs);
 }
 
+
+void td_py_invoke4(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
+		   td_val_t *arg3, td_val_t *arg4)
+{
+    PyObject *pArgs;
+
+    pArgs = PyTuple_New(3);
+    td_py_add_arg(pArgs, 0, arg1);
+    td_py_add_arg(pArgs, 1, arg2);
+    td_py_add_arg(pArgs, 2, arg3);
+    td_py_add_arg(pArgs, 3, arg4);
+    td_py_call(out, pArgs, fname);
+    Py_DECREF(pArgs);
+}
+
+
+void td_py_invoke5(td_val_t *out, char *fname, td_val_t *arg1,td_val_t *arg2,
+		   td_val_t *arg3, td_val_t *arg4, td_val_t *arg5)
+{
+    PyObject *pArgs;
+
+    pArgs = PyTuple_New(3);
+    td_py_add_arg(pArgs, 0, arg1);
+    td_py_add_arg(pArgs, 1, arg2);
+    td_py_add_arg(pArgs, 2, arg3);
+    td_py_add_arg(pArgs, 3, arg4);
+    td_py_add_arg(pArgs, 4, arg5);
+    td_py_call(out, pArgs, fname);
+    Py_DECREF(pArgs);
+}
+
 void td_py_invoke_graph_and_csc(td_val_t *out, char *fname, graph_t *in_graph, 
 				int *in_csc_offsets, int *in_csc_indices)
 			       
@@ -473,6 +504,8 @@ void td_py_init(char *homedir)
     env->invoke1 = &td_py_invoke1;
     env->invoke2 = &td_py_invoke2;
     env->invoke3 = &td_py_invoke3;
+    env->invoke4 = &td_py_invoke4;
+    env->invoke5 = &td_py_invoke5;
     env->invokeGraphAndCSC = &td_py_invoke_graph_and_csc;
     //env->retain
     //env->release

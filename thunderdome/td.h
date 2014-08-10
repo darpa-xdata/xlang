@@ -156,6 +156,8 @@ typedef struct _td_env_t {
     void (*invoke1)(td_val_t *out, char *f, td_val_t *);
     void (*invoke2)(td_val_t *out, char *f, td_val_t *, td_val_t *);
     void (*invoke3)(td_val_t *out, char *f, td_val_t *, td_val_t *, td_val_t *);
+    void (*invoke4)(td_val_t *out, char *f, td_val_t *, td_val_t *, td_val_t *, td_val_t *);
+    void (*invoke5)(td_val_t *out, char *f, td_val_t *, td_val_t *, td_val_t *, td_val_t *, td_val_t *);
     void (*invokeGraph0)(graph_t *out, char *f);
     void (*invokeGraph1)(graph_t *out, char *f, graph_t *in);
     void (*invokeGraph2)(graph_t *out, char *f, graph_t *in, int k);

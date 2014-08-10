@@ -5,8 +5,8 @@ import pandas as pds
 
 
 def example_hyperlink_plot():
-    idx_df = pds.read_csv("example_index.txt", sep="\t", names=["url", "id"]) 
-    arc_df = pds.read_csv("example_arcs.txt", sep="\t", names=["src", "dest"])
+    idx_df = pds.read_csv("../../data/pld-index-sample", sep="\t", names=["url", "id"]) 
+    arc_df = pds.read_csv("../../data/pld-arc-sample", sep="\t", names=["src", "dest"])
 
     out_deg = arc_df.groupby(["src"]).size()
     out_deg.sort(ascending=False)
@@ -29,3 +29,6 @@ def cluster_vals(nodes, values):
     plt.output_file("in_deg.html", title="In degree rankings")
     bar = Bar(nodes, values)
     bar.show()
+
+if __name__ == "__main__":
+    example_hyperlink_plot()
