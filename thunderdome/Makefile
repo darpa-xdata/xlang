@@ -26,8 +26,8 @@ $(LIBTD_JULIA): td.h td_julia.c $(LIBTD)
 	$(CC) $(DEBUG) -shared -fPIC td_julia.o -o $@ $(JULIA_LDFLAGS) ./$(LIBTD)
 
 $(LIBTD_R): td.h $(LIBTD) td_r.cpp
-	$(R_CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(R_INCLUDES)
-	$(R_CXX) $(DEBUG) -shared -fPIC td_r.o -o $@ $(R_LDFLAGS) $(R_LIBS) ./$(LIBTD)
+	$(CXX) $(DEBUG) -fPIC -c td_r.cpp -o td_r.o $(CXXFLAGS) $(CPPFLAGS)
+	$(CXX) $(DEBUG) -shared -fPIC td_r.o -o $@  $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) ./$(LIBTD)
 
 # for windows for now...? do we have to make a dll??
 $(LIBTD_JAVA_WINDOWS): td.h td_java.c $(LIBTD)
