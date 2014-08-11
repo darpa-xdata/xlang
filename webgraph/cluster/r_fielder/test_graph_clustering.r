@@ -36,7 +36,7 @@ if (is.null(pargs$ofile)) {
   cat("Writing the file.\n")
   write(create_fdg(cg$matrix), pargs$ofile)
   if (Sys.info()['sysname'] == "Darwin") {
-    cat("Opening derived graph in web browser")
+    cat("Opening derived graph in web browser\n")
     system(paste("open", pargs$ofile))
   }
 } else if (length(grep("\\.json$", pargs$ofile)) > 0) {

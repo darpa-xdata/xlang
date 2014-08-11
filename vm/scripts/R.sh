@@ -12,9 +12,10 @@ sudo apt-get -y install r-base-dev
 # sudo su - -c "R -e \"install.packages('RInside', repos='http://cran.rstudio.com/')\""
 
 # Install Rcpp R package
-wget http://cran.r-project.org/src/contrib/Rcpp_0.11.2.tar.gz
-sudo R CMD INSTALL Rcpp_0.11.2.tar.gz
-rm Rcpp_0.11.1.tar.gz
+#wget http://cran.r-project.org/src/contrib/Rcpp_0.11.2.tar.gz
+#sudo R CMD INSTALL Rcpp_0.11.2.tar.gz
+#rm Rcpp_0.11.1.tar.gz
+sudo Rscript -e "install.packages('Rcpp', repos='http://cran.r-project.org')"
 
 # Install RInside R package
 wget http://cran.r-project.org/src/contrib/RInside_0.2.11.tar.gz
@@ -46,13 +47,28 @@ wget http://cran.r-project.org/src/contrib/doMC_1.3.3.tar.gz
 sudo R CMD INSTALL doMC_1.3.3.tar.gz
 rm doMC_1.3.3.tar.gz
 
-# Install irlba R package
-wget http://cran.r-project.org/src/contrib/irlba_1.0.3.tar.gz
-sudo R CMD INSTALL irlba_1.0.3.tar.gz
-rm irlba_1.0.3.tar.gz
+# Install devtools R package
+# Note that we are using an old enough version of R that devtools is not
+# available.
+#Rscript -e "install.packages('devtools', repos='http://cran.r-project.org')"
+
+# Install the IRL package
+# Rscript -e "devtools::install_github('bwlewis/IRL')"
+wget https://github.com/bwlewis/IRL/archive/master.zip
+unzip master.zip
+sudo R CMD INSTALL IRL-master
+rm -rf IRL-master master.zip
 
 # Install SparseM R package
 wget http://cran.r-project.org/src/contrib/SparseM_1.05.tar.gz
 sudo R CMD INSTALL SparseM_1.05.tar.gz
 rm SparseM_1.05.tar.gz
 
+# Install optparse R package
+sudo Rscript -e "install.packages('optparse', repos='http://cran.r-project.org')"
+
+# Install igraph R package
+sudo Rscript -e "install.packages('igraph', repos='http://cran.r-project.org')"
+
+# Install d3Network R package
+sudo Rscript -e "install.packages('d3Network', repos='http://cran.r-project.org')"

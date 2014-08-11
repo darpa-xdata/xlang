@@ -7,7 +7,7 @@ library(foreach, quietly=TRUE)
 
 clusters_from_proj_nodes <- function(proj_nodes) {
   temp <- apply(proj_nodes, 1, 
-              function(x) sum(as.numeric(x > 0)*2^(1:ncol(proj_nodes))))
+                function(x) sum(as.numeric(x > 0)*2^(1:ncol(proj_nodes))))
   us <- unique(sort(temp))
   ret <- as.integer(temp)
   for (i in 1:length(us))
